@@ -7,6 +7,7 @@
   "enableInstallTelemetry": false,
   "doubleEscapeAction": "none",
   "treeFilterMode": "default",
+  "compactTools": true,
   "theme": "dark",
   "extensions": [
     "/root/.pi/agent/extensions/darwin-branding.ts",

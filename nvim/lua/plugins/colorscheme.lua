@@ -11,20 +11,36 @@ return {
   {
     "nvim-lualine/lualine.nvim",
     opts = function(_, opts)
-      -- Force lualine to use the 'auto' theme which adapts to the terminal colors,
-      -- and ensure we don't have hardcoded light colors for sections.
-      opts.options = opts.options or {}
-      opts.options.theme = "auto"
-      
-      -- Ensure section B/C backgrounds aren't forced to a light color
-      -- This fixes the white background in the terminal/status info
-      local custom_colors = {
+      -- Use a theme that is strictly dark/black
+      local custom_black = {
         normal = {
-          b = { bg = "NONE", fg = "NONE" },
-          c = { bg = "NONE", fg = "NONE" },
+          a = { bg = "#000000", fg = "#ffffff", gui = "bold" },
+          b = { bg = "#000000", fg = "#888888" },
+          c = { bg = "#000000", fg = "#888888" },
+        },
+        insert = {
+          a = { bg = "#000000", fg = "#ffffff", gui = "bold" },
+          b = { bg = "#000000", fg = "#888888" },
+        },
+        visual = {
+          a = { bg = "#000000", fg = "#ffffff", gui = "bold" },
+          b = { bg = "#000000", fg = "#888888" },
+        },
+        replace = {
+          a = { bg = "#000000", fg = "#ffffff", gui = "bold" },
+          b = { bg = "#000000", fg = "#888888" },
+        },
+        inactive = {
+          a = { bg = "#000000", fg = "#444444", gui = "bold" },
+          b = { bg = "#000000", fg = "#444444" },
+          c = { bg = "#000000", fg = "#444444" },
         },
       }
-      opts.options.theme = custom_colors
+      
+      opts.options = opts.options or {}
+      opts.options.theme = custom_black
+      opts.options.component_separators = { left = "", right = "" }
+      opts.options.section_separators = { left = "", right = "" }
     end,
   },
 }

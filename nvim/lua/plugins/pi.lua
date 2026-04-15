@@ -30,6 +30,12 @@ local function initialize_neovim_state()
 
   -- Use VimEnter to ensure the UI is ready
   local group = vim.api.nvim_create_augroup("darwin_initialize_state", { clear = true })
+  
+  -- Global tracker for monitor context
+  _G.darwin_monitor_context = {
+    last_file = nil
+  }
+
   vim.api.nvim_create_autocmd("VimEnter", {
     group = group,
     once = true,
@@ -88,6 +94,14 @@ return {
             layout = {
               preset = "vscode",
               preview = "main",
+            },
+            actions = {
+              confirm = function(picker, item)
+                picker:close()
+                if item and item.file then
+                  vim.cmd("edit " .. vim.fn.fnameescape(item.file))
+                end
+              end,
             },
           },
         },

@@ -10,6 +10,14 @@ local function close_sidebar()
     pi_term:hide()
   end
 
+  -- Grug-far (Search & Replace)
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    local buf = vim.api.nvim_win_get_buf(win)
+    if vim.bo[buf].filetype == "grug-far" then
+      vim.api.nvim_win_close(win, true)
+    end
+  end
+
   -- Standard Terminal
   local main_term = Snacks.terminal.get(nil, { create = false })
   if main_term and main_term:valid() then
@@ -28,6 +36,14 @@ vim.keymap.set({ "n", "t" }, "<C-e>", function()
         preset = "vscode",
         preview = "main",
         position = "float",
+      },
+      actions = {
+        confirm = function(picker, item)
+          picker:close()
+          if item and item.file then
+            vim.cmd("edit " .. vim.fn.fnameescape(item.file))
+          end
+        end,
       },
     })
   end
@@ -85,6 +101,43 @@ vim.keymap.set({ "n", "t" }, "<leader>ps", function()
     monitor.show_monitor_view()
   end
 end, { noremap = true, silent = true, desc = "Agent Monitor" })
+
+-- Global keymap for Grug-far (Search & Replace) on the LEFT
+vim.keymap.set("n", "<leader>sr", function()
+  local grug = require("grug-far")
+  local existing_win = nil
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    local buf = vim.api.nvim_win_get_buf(win)
+    if vim.bo[buf].filetype == "grug-far" then
+      existing_win = win
+      break
+    end
+  end
+
+  if existing_win then
+    vim.api.nvim_win_close(existing_win, true)
+  else
+    close_sidebar()
+    grug.open({
+      windowCreationCommand = "topleft vsplit",
+      prefills = {
+        paths = vim.fn.expand("%"),
+      },
+    })
+    vim.api.nvim_win_set_width(0, math.floor(vim.o.columns * 0.40))
+  end
+end, { desc = "Darwin: Search & Replace (Left Sidebar)" })
+
+-- Jump-to-file hotkeys for monitor context
+vim.keymap.set("n", "<leader>fr", function()
+  local monitor_ok, monitor = pcall(require, "config.monitor")
+  if monitor_ok then monitor.open_last_file("read") end
+end, { desc = "Darwin: Open Monitor File (Read-Only)" })
+
+vim.keymap.set("n", "<leader>fw", function()
+  local monitor_ok, monitor = pcall(require, "config.monitor")
+  if monitor_ok then monitor.open_last_file("edit") end
+end, { desc = "Darwin: Open Monitor File (Edit)" })
 
 -- Global keymap for Darwin CLI: Focus and Interrupt
 vim.keymap.set({ "n", "t" }, "<leader>qe", function()
