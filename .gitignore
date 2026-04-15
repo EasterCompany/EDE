@@ -1,0 +1,13 @@
+# Logs
+*.log
+/tmp/darwin-monitor.md
+
+# Backups
+*.backup.*
+
+# Neovim
+nvim/.neoconf.json
+
+# Pi
+pi/sessions/
+pi/auth.json

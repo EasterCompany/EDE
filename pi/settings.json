@@ -1,0 +1,15 @@
+{
+  "defaultProvider": "google-gemini-cli",
+  "defaultModel": "gemini-3-flash-preview",
+  "defaultThinkingLevel": "medium",
+  "showHardwareCursor": true,
+  "quietStartup": true,
+  "enableInstallTelemetry": false,
+  "doubleEscapeAction": "none",
+  "treeFilterMode": "default",
+  "theme": "dark",
+  "extensions": [
+    "/root/.pi/agent/extensions/darwin-branding.ts",
+    "/root/.pi/agent/extensions/monitor.ts"
+  ]
+}
