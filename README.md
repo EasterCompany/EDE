@@ -1,6 +1,6 @@
-# 🐣 Easter Company: Darwin IDE
+# 🐣 Easter Company Developer Environment
 
-Welcome to **Darwin**, the next-generation development environment from Easter Company. Darwin is not just a text editor; it's a unified ecosystem designed to empower developers with cutting-edge AI assistance.
+Welcome to **EDE** with Darwin first class integration, the next-generation development environment from Easter Company. Darwin is not just a text editor; it's a unified ecosystem designed to empower developers with cutting-edge AI assistance.
 
 ## 🚀 The Darwin Experience
 
