@@ -21,7 +21,7 @@ echo "$DARWIN_ART"
 echo "Starting Darwin IDE installation..."
 
 # Prerequisites
-PREREQS=("nvim" "pi" "git" "curl")
+PREREQS=("nvim" "pi" "git" "curl" "lazygit")
 for cmd in "${PREREQS[@]}"; do
   if ! command -v "$cmd" &> /dev/null; then
     echo "❌ Error: $cmd is not installed. Please install it before running this script."
