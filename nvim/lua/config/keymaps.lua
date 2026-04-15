@@ -3,12 +3,6 @@
 -- Add any additional keymaps here
 
 local function close_sidebar()
-  -- Explorer
-  local explorer = Snacks.picker.get({ source = "explorer" })[1]
-  if explorer and not explorer.closed then
-    explorer:close()
-  end
-
   -- Pi
   local pi_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-cli.sh"
   local pi_term = Snacks.terminal.get(pi_cmd, { create = false })
@@ -29,8 +23,13 @@ vim.keymap.set({ "n", "t" }, "<C-e>", function()
   if explorer and not explorer.closed and explorer:is_focused() then
     explorer:close()
   else
-    close_sidebar()
-    Snacks.picker.explorer()
+    Snacks.picker.explorer({
+      layout = {
+        preset = "vscode",
+        preview = "main",
+        position = "float",
+      },
+    })
   end
 end, { noremap = true, silent = true, desc = "Explorer" })
 
@@ -55,7 +54,7 @@ vim.keymap.set({ "n", "t" }, "<C-\\>", function()
     else
       -- Pi terminal does not exist, create and show it.
       -- Ensure sidebar options are applied.
-      Snacks.terminal.toggle(pi_cmd, { win = { position = "left", width = 0.33, wo = { winbar = '', statusline = '' } }, interactive = true })
+      Snacks.terminal.toggle(pi_cmd, { win = { position = "left", width = 0.40, wo = { winbar = '', statusline = '' } }, interactive = true })
     end
   end
 end, { noremap = true, silent = true, desc = "Pi CLI" })
@@ -67,7 +66,7 @@ local function toggle_terminal()
     term:hide()
   else
     close_sidebar()
-    Snacks.terminal.toggle(nil, { win = { position = "left", width = 0.33, wo = { winbar = '', statusline = '' } } })
+    Snacks.terminal.toggle(nil, { win = { position = "left", width = 0.40, wo = { winbar = '', statusline = '' } } })
   end
 end
 
@@ -86,3 +85,19 @@ vim.keymap.set({ "n", "t" }, "<leader>ps", function()
     monitor.show_monitor_view()
   end
 end, { noremap = true, silent = true, desc = "Agent Monitor" })
+
+-- Global keymap for Darwin CLI: Focus and Interrupt
+vim.keymap.set({ "n", "t" }, "<leader>qe", function()
+  local pi_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-cli.sh"
+  local term = Snacks.terminal.get(pi_cmd, { create = false })
+
+  if term and term:valid() then
+    -- 1. Focus the terminal window
+    term:show():focus()
+    -- 2. Send Alt+Q to trigger the app.interrupt within Pi
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<A-q>", true, true, true), "n", false)
+  else
+    -- If not running, just open it
+    Snacks.terminal.toggle(pi_cmd, { win = { position = "left", width = 0.40, wo = { winbar = '', statusline = '' } }, interactive = true })
+  end
+end, { noremap = true, silent = true, desc = "Darwin: Focus & Interrupt" })

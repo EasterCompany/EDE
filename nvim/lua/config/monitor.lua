@@ -11,12 +11,12 @@ local darwin_art = [[
 ██████╔╝██║  ██║██║  ██║╚███╔███╔╝██║██║ ╚████║
 ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝ ╚══╝╚══╝ ╚═╝╚═╝  ╚═══╝
 
-            PI AGENT MONITOR
-           (C) EASTER COMPANY
+PI AGENT MONITOR
+(C) EASTER COMPANY
 
-    Darwin is initializing the intelligence.
-    Press <C-\> to interact with the agent.
-    Press <C-e> to toggle the file explorer.
+Darwin is initializing the intelligence.
+Press <C-\> to interact with the agent.
+Press <C-e> to open the file explorer.
 ]]
 
 local function get_monitor_buf()
@@ -45,10 +45,12 @@ local function update_monitor_buf()
   local lines
   if content == "" or content == "\n" or content:find("Waiting for activity") then
     lines = vim.split(darwin_art, "\n")
-    -- Simple centering
-    local padding = string.rep(" ", math.max(0, math.floor((vim.o.columns - 50) / 2)))
+    -- Left align with tabs
+    local padding = "\t\t\t"
     for i, line in ipairs(lines) do
-      lines[i] = padding .. line
+      if line ~= "" then
+        lines[i] = padding .. line
+      end
     end
     for i = 1, 5 do table.insert(lines, 1, "") end
   else

@@ -2,7 +2,7 @@ local pi_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-cli.sh"
 
 local function pi_opts()
   return {
-    win = { position = "left", width = 0.33, wo = { winbar = '', statusline = '' } },
+    win = { position = "left", width = 0.40, wo = { winbar = '', statusline = '' } },
     interactive = true,
   }
 end
@@ -29,21 +29,15 @@ local function initialize_neovim_state()
   end
 
   -- Use VimEnter to ensure the UI is ready
+  local group = vim.api.nvim_create_augroup("darwin_initialize_state", { clear = true })
   vim.api.nvim_create_autocmd("VimEnter", {
+    group = group,
+    once = true,
     callback = function()
-      -- 1. Initialize Pi terminal in the background (hidden).
+      -- 1. Initialize Pi terminal as the default left sidebar
       local term = Snacks.terminal(pi_cmd, pi_opts())
-      if term and term:valid() then
-        term:hide()
-      end
 
-      -- 2. Open the file explorer if not already open
-      local explorer = Snacks.picker.get({ source = "explorer" })[1]
-      if not explorer or explorer.closed then
-        Snacks.picker.explorer()
-      end
-
-      -- 3. Manage splash screen and pi monitor
+      -- 2. Manage splash screen and pi monitor
       vim.defer_fn(function()
         local dashboard_win = nil
         for _, win in ipairs(vim.api.nvim_list_wins()) do
@@ -92,10 +86,8 @@ return {
         sources = {
           explorer = {
             layout = {
-              layout = {
-                position = "left",
-                width = 0.33,
-              },
+              preset = "vscode",
+              preview = "main",
             },
           },
         },
