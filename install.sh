@@ -389,6 +389,7 @@ if [ "$AUTO_CONFIRM" = false ]; then
 fi
 
 if [ "$REMOTE_INSTALL" = true ]; then
+    draw_centered "${BLUE}🗑️ Removing source repository ($EDE_DIR)...${RESET}"
     rm -rf "$EDE_DIR"
 fi
 
