@@ -41,7 +41,9 @@ Experience the complete Darwin suite with a single command:
 ## 🏗️ System Architecture
 
 1.  **Darwin Neovim**: A high-performance config built on LazyVim. It uses absolute line numbering and is stripped of intrusive themes to respect your terminal's natural palette.
+
 2.  **Darwin CLI Wrapper**: Orchestrates the `darwin` command, handles project-specific session lookups, and enforces the 48-hour session expiration.
+
 3.  **Agent Extensions**: 
     - `darwin-branding.ts`: Ensures a unified Easter Company identity across all interactions.
     - `monitor.ts`: Generates the real-time markdown-based visualization of the agent's internal state.
