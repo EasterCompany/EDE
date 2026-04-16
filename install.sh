@@ -175,21 +175,21 @@ function animate_intro() {
 }
 
 # START
-# Pre-flight for 'curl | bash' users (download music before animation starts)
-if [ ! -f "$(dirname "$0")/installer_bgm.mp3" ] && [ ! -f "/tmp/installer_bgm.mp3" ]; then
-    curl -sLo /tmp/installer_bgm.mp3 https://raw.githubusercontent.com/EasterCompany/EDE/main/installer_bgm.mp3
+# Pre-flight for audio (handle before anything else)
+MUSIC_FILE="$(dirname "$0")/installer_bgm.mp3"
+if [ ! -f "$MUSIC_FILE" ] && [ ! -f "/tmp/installer_bgm.mp3" ]; then
+    # Silently attempt to fetch if missing (for curl | bash or releases)
+    curl -sLo /tmp/installer_bgm.mp3 https://raw.githubusercontent.com/EasterCompany/EDE/main/installer_bgm.mp3 || true
 fi
 
-# Background Music
-MUSIC_FILE="$(dirname "$0")/installer_bgm.mp3"
 if [ ! -f "$MUSIC_FILE" ] && [ -f "/tmp/installer_bgm.mp3" ]; then
     MUSIC_FILE="/tmp/installer_bgm.mp3"
 fi
 
-if [ -f "$MUSIC_FILE" ]; then
-    # --input-terminal=no prevents mpv from grabbing the terminal
-    # --volume=100 ensures it's audible
-    mpv --no-video --loop=inf --input-terminal=no --volume=100 "$MUSIC_FILE" > /dev/null 2>&1 &
+if [ -f "$MUSIC_FILE" ] && command -v ffplay &> /dev/null; then
+    # Use ffplay (ffmpeg) for background music
+    # -nodisp: no video window, -loop 0: infinite loop, -volume 100
+    ffplay -nodisp -loop 0 -volume 100 "$MUSIC_FILE" > /dev/null 2>&1 &
     MPV_PID=$!
     trap "kill $MPV_PID 2>/dev/null; rm -f /tmp/installer_bgm.mp3" EXIT
 fi
@@ -204,6 +204,7 @@ function install_dependency() {
     
     local pkg="$cmd"
     if [ "$cmd" = "nvim" ]; then pkg="neovim"; fi
+    if [ "$cmd" = "ffplay" ]; then pkg="ffmpeg"; fi
     
     local SUDO_CMD=""
     if command -v sudo &> /dev/null && [ "$EUID" -ne 0 ]; then
@@ -285,19 +286,13 @@ function install_dependency() {
 }
 
 # Prerequisites
-PREREQS=("nvim" "pi" "git" "curl" "lazygit" "mpv")
+PREREQS=("nvim" "pi" "git" "curl" "lazygit" "ffplay")
 for cmd in "${PREREQS[@]}"; do
   if ! command -v "$cmd" &> /dev/null; then
     install_dependency "$cmd"
   fi
 done
 sleep 0.2
-
-# Pre-flight for 'curl | bash' users
-if [ ! -f "$(dirname "$0")/installer_bgm.mp3" ] && [ ! -f "/tmp/installer_bgm.mp3" ]; then
-    draw_centered "${BLUE}📦 Fetching installer assets...${RESET}"
-    curl -sLo /tmp/installer_bgm.mp3 https://raw.githubusercontent.com/EasterCompany/EDE/main/installer_bgm.mp3
-fi
 
 # Repository Setup
 EDE_DIR="$HOME/EDE"
