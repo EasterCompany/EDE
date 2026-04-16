@@ -98,12 +98,18 @@ BACKUP_PREFIX="nvim.darwin.backup"
 
 # Parse Flags
 AUTO_CONFIRM=false
-while getopts "y" opt; do
+SILENT_MODE=false
+while getopts "ys" opt; do
   case $opt in
     y) AUTO_CONFIRM=true ;;
-    *) echo "Usage: $0 [-y]" >&2; exit 1 ;;
+    s) SILENT_MODE=true ;;
+    *) echo "Usage: $0 [-y] [-s]" >&2; exit 1 ;;
   esac
 done
+
+if [ "$SILENT_MODE" = true ]; then
+    exec > /dev/null 2>&1
+fi
 
 function draw_centered() {
     local input="$1"
@@ -372,9 +378,11 @@ ${GREEN}======================================================
 ======================================================
 "
 
-echo -e "\n"
-draw_centered "$SUMMARY"
-read -n 1 -s < /dev/tty
+if [ "$AUTO_CONFIRM" = false ]; then
+    echo -e "\n"
+    draw_centered "$SUMMARY"
+    read -n 1 -s < /dev/tty
+fi
 
 # Stop the music
 [ -n "$MPV_PID" ] && kill $MPV_PID 2>/dev/null

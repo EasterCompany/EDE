@@ -14,10 +14,25 @@ Welcome to **EDE** featuring the **Darwin IDE**, the next-generation development
 
 Experience the complete Darwin suite with a single command:
 
+### Standard Install
+Recommended for most users. Includes the animated installer with background music.
 ```bash
-./install.sh -y
+./install.sh
 ```
-*Prerequisites: nvim, pi, git, curl, lazygit*
+
+### Unattended & Silent Install
+Ideal for quick setup or automated scripts.
+```bash
+./install.sh -y -s
+```
+
+### Remote Install
+Install Darwin without cloning the repository first.
+```bash
+curl -sL https://easter.company/ede/install | bash
+```
+
+*Prerequisites: nvim, pi, git, curl, lazygit, mpv (The installer will attempt to auto-install any missing dependencies)*
 
 ## ⌨️ Essential Hotkeys
 
