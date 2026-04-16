@@ -332,6 +332,7 @@ PI_AGENT_DIR="$HOME/.pi/agent"
 mkdir -p "$PI_AGENT_DIR/extensions"
 draw_centered "${CYAN}🛠️ Configuring Pi Agent for Darwin...${RESET}"
 cp "$EDE_DIR/pi/settings.json" "$PI_AGENT_DIR/settings.json"
+cp "$EDE_DIR/pi/models.json" "$PI_AGENT_DIR/models.json"
 cp "$EDE_DIR/pi/extensions/darwin-branding.ts" "$PI_AGENT_DIR/extensions/darwin-branding.ts"
 cp "$EDE_DIR/pi/extensions/monitor.ts" "$PI_AGENT_DIR/extensions/monitor.ts"
 sed -i "s|/root/|$HOME/|g" "$PI_AGENT_DIR/settings.json"
@@ -346,10 +347,16 @@ elif [[ "$SHELL" == *"bash"* ]]; then
   SHELL_CONFIG="$HOME/.bashrc"
 fi
 
+DARWIN_AUTH_SCRIPT="$HOME/.config/nvim/scripts/darwin-auth.sh"
+chmod +x "$DARWIN_AUTH_SCRIPT" 2>/dev/null
+
 if [ -n "$SHELL_CONFIG" ]; then
   if ! grep -q "alias darwin=" "$SHELL_CONFIG"; then
     echo "alias darwin='nvim'" >> "$SHELL_CONFIG"
     echo "alias ide='nvim'" >> "$SHELL_CONFIG"
+  fi
+  if ! grep -q "alias darwin-auth=" "$SHELL_CONFIG"; then
+    echo "alias darwin-auth='$DARWIN_AUTH_SCRIPT'" >> "$SHELL_CONFIG"
   fi
 fi
 sleep 0.2
@@ -376,6 +383,8 @@ SUMMARY="
 ${GREEN}======================================================
          ${BOLD}Install Complete, press any key to start.${RESET}${GREEN}
 ======================================================
+ Run ${BOLD}darwin-auth${RESET}${GREEN} to connect your EID account.
+======================================================${RESET}
 "
 
 if [ "$AUTO_CONFIRM" = false ]; then

@@ -1,10 +1,36 @@
 #!/bin/bash
 
-# Prepend default flags to args: smallest model
-# pi uses --model
-set -- --model google-gemini-cli/gemini-3-flash-preview "$@"
+# Darwin CLI — launches the Pi agent routed through EMS (Darwin Cloud).
+# Requires prior authentication via `darwin-auth`.
 
-# Check for existing project-specific session and enforce 48-hour lifecycle
+CREDENTIALS_FILE="$HOME/.ede/credentials.json"
+
+# Check for stored EID credentials
+if [ ! -f "$CREDENTIALS_FILE" ]; then
+    echo ""
+    echo "  Darwin requires an EID account to use Darwin Cloud."
+    echo "  Run 'darwin-auth' to authenticate."
+    echo ""
+    exit 1
+fi
+
+# Check token expiry
+TOKEN=$(grep -o '"token":"[^"]*"' "$CREDENTIALS_FILE" | cut -d'"' -f4)
+EXPIRES_AT=$(grep -o '"expires_at":[0-9]*' "$CREDENTIALS_FILE" | cut -d':' -f2)
+NOW=$(date +%s)
+
+if [ -z "$TOKEN" ] || [ -z "$EXPIRES_AT" ] || [ "$NOW" -ge "$EXPIRES_AT" ]; then
+    echo ""
+    echo "  Your Darwin session has expired."
+    echo "  Run 'darwin-auth' to re-authenticate."
+    echo ""
+    exit 1
+fi
+
+# Route through EMS using the EID token as the API key
+set -- --model ems/darwin-cloud "$@"
+
+# Session continuation: resume project session if active within 48 hours
 CWD_SAFE=$(echo "$PWD" | sed 's/^\///; s/\//-/g; s/$/-/')
 SESSION_DIR="$HOME/.pi/agent/sessions/--${CWD_SAFE}-"
 
@@ -12,11 +38,8 @@ USE_CONTINUE=false
 if [ -d "$SESSION_DIR" ]; then
     LATEST_SESSION=$(ls -t "$SESSION_DIR"/*.jsonl 2>/dev/null | head -n 1)
     if [ -n "$LATEST_SESSION" ]; then
-        # Get file modification time in seconds
         LAST_MOD=$(stat -c %Y "$LATEST_SESSION")
-        NOW=$(date +%s)
         DIFF=$((NOW - LAST_MOD))
-        # 48 hours = 172800 seconds
         if [ $DIFF -le 172800 ]; then
             USE_CONTINUE=true
         fi
@@ -27,6 +50,4 @@ if [ "$USE_CONTINUE" = true ]; then
     set -- --session "$LATEST_SESSION" "$@"
 fi
 
-# We use exec to replace the shell process with pi directly.
 exec pi "$@"
-

@@ -1,6 +1,6 @@
 {
-  "defaultProvider": "google-gemini-cli",
-  "defaultModel": "gemini-3-flash-preview",
+  "defaultProvider": "ems",
+  "defaultModel": "darwin-cloud",
   "defaultThinkingLevel": "medium",
   "showHardwareCursor": true,
   "quietStartup": true,
@@ -8,7 +8,7 @@
   "doubleEscapeAction": "none",
   "treeFilterMode": "default",
   "compactTools": true,
-  "models": "google-gemini-cli/gemini-3*",
+  "models": "ems/darwin*",
   "hideFooter": true,
   "theme": "dark",
   "extensions": [
