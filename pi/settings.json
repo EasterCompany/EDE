@@ -1,5 +1,5 @@
 {
-  "defaultProvider": "ems",
+  "defaultProvider": "openai",
   "defaultModel": "darwin-cloud",
   "defaultThinkingLevel": "medium",
   "showHardwareCursor": true,
@@ -8,7 +8,7 @@
   "doubleEscapeAction": "none",
   "treeFilterMode": "default",
   "compactTools": true,
-  "models": "ems/darwin*",
+  "models": "openai/darwin*",
   "hideFooter": true,
   "theme": "dark",
   "extensions": [

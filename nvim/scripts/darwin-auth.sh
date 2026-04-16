@@ -5,7 +5,6 @@
 
 EID_URL="http://100.100.1.0:8080"
 CREDENTIALS_FILE="$HOME/.ede/credentials.json"
-MODELS_FILE="$HOME/.pi/agent/models.json"
 
 RED="\033[31m"
 GREEN="\033[32m"
@@ -65,26 +64,5 @@ cat > "$CREDENTIALS_FILE" <<EOF
 }
 EOF
 chmod 600 "$CREDENTIALS_FILE"
-
-# Update pi models.json with the token as apiKey for the ems provider
-if [ -f "$MODELS_FILE" ]; then
-    if command -v jq &>/dev/null; then
-        TMP=$(mktemp)
-        jq --arg token "$TOKEN" '.providers.ems.apiKey = $token' "$MODELS_FILE" > "$TMP" && mv "$TMP" "$MODELS_FILE"
-    else
-        # Fallback: rewrite from template (clobbers any local edits)
-        EDE_DIR="$HOME/EDE"
-        if [ -f "$EDE_DIR/pi/models.json" ]; then
-            sed "s|\"api\": \"openai-completions\"|\"apiKey\": \"$TOKEN\",\n      \"api\": \"openai-completions\"|" \
-                "$EDE_DIR/pi/models.json" > "$MODELS_FILE"
-        fi
-    fi
-else
-    # No models.json yet — create it with the token
-    EDE_DIR="$HOME/EDE"
-    if [ -f "$EDE_DIR/pi/models.json" ] && command -v jq &>/dev/null; then
-        jq --arg token "$TOKEN" '.providers.ems.apiKey = $token' "$EDE_DIR/pi/models.json" > "$MODELS_FILE"
-    fi
-fi
 
 echo -e "${GREEN}✓ Authenticated as ${USERNAME}. Darwin is ready.${RESET}\n"

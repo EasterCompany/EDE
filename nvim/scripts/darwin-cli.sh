@@ -27,8 +27,9 @@ if [ -z "$TOKEN" ] || [ -z "$EXPIRES_AT" ] || [ "$NOW" -ge "$EXPIRES_AT" ]; then
     exit 1
 fi
 
-# Route through EMS using the EID token as the API key
-set -- --model ems/darwin-cloud "$@"
+# Pass the EID token as the API key — pi sends it as Authorization: Bearer
+export OPENAI_API_KEY="$TOKEN"
+set -- --model openai/darwin-cloud "$@"
 
 # Session continuation: resume project session if active within 48 hours
 CWD_SAFE=$(echo "$PWD" | sed 's/^\///; s/\//-/g; s/$/-/')

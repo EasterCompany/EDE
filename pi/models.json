@@ -1,12 +1,11 @@
 {
   "providers": {
-    "ems": {
-      "baseUrl": "http://100.100.1.1:8080/v1",
-      "api": "openai-completions",
+    "openai": {
       "models": [
         {
           "id": "darwin-cloud",
-          "name": "Darwin Cloud"
+          "name": "Darwin Cloud",
+          "baseUrl": "http://100.100.1.1:8080/v1"
         }
       ]
     }
