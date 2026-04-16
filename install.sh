@@ -177,8 +177,9 @@ function animate_intro() {
 # START
 # Pre-flight for audio (handle before anything else)
 MUSIC_FILE="$(dirname "$0")/installer_bgm.mp3"
+
+# Ensure music exists
 if [ ! -f "$MUSIC_FILE" ] && [ ! -f "/tmp/installer_bgm.mp3" ]; then
-    # Silently attempt to fetch if missing (for curl | bash or releases)
     curl -sLo /tmp/installer_bgm.mp3 https://raw.githubusercontent.com/EasterCompany/EDE/main/installer_bgm.mp3 || true
 fi
 
@@ -186,12 +187,14 @@ if [ ! -f "$MUSIC_FILE" ] && [ -f "/tmp/installer_bgm.mp3" ]; then
     MUSIC_FILE="/tmp/installer_bgm.mp3"
 fi
 
-if [ -f "$MUSIC_FILE" ] && command -v ffplay &> /dev/null; then
-    # Use ffplay (ffmpeg) for background music
-    # -nodisp: no video window, -loop 0: infinite loop, -volume 100
-    ffplay -nodisp -loop 0 -volume 100 "$MUSIC_FILE" > /dev/null 2>&1 &
-    MPV_PID=$!
-    trap "kill $MPV_PID 2>/dev/null; rm -f /tmp/installer_bgm.mp3" EXIT
+if [ -f "$MUSIC_FILE" ]; then
+    # Start audio immediately at 100% volume in background
+    # We use SDL_AUDIODRIVER=sndio as it was the only one that worked in logs
+    # We force volume and loop
+    SDL_AUDIODRIVER=sndio ffplay -nodisp -autoexit -loop 0 -volume 100 "$MUSIC_FILE" > /dev/null 2>&1 &
+    FFPLAY_PID=$!
+    # Trap to ensure cleanup of process and temp files
+    trap "kill $FFPLAY_PID 2>/dev/null; rm -f /tmp/installer_bgm.mp3" EXIT
 fi
 
 animate_intro
@@ -376,11 +379,12 @@ ${GREEN}======================================================
 if [ "$AUTO_CONFIRM" = false ]; then
     echo -e "\n"
     draw_centered "$SUMMARY"
+    # Force read from tty to handle curl | bash cases
     read -n 1 -s < /dev/tty
 fi
 
 # Stop the music
-[ -n "$MPV_PID" ] && kill $MPV_PID 2>/dev/null
+[ -n "$FFPLAY_PID" ] && kill $FFPLAY_PID 2>/dev/null
 
 if [ "$DELETE_REPO" = true ]; then
     draw_centered "${BLUE}🗑️ Removing source repository ($EDE_DIR)...${RESET}"
