@@ -168,20 +168,30 @@ function animate_intro() {
     echo -e "\n\n"
 }
 
-# Background Music
-if [ -f "$(dirname "$0")/installer_bgm.mp3" ]; then
-    mpv --no-video --loop "$(dirname "$0")/installer_bgm.mp3" > /dev/null 2>&1 &
-    MPV_PID=$!
-    trap "kill $MPV_PID 2>/dev/null" EXIT
+# START
+# Pre-flight for 'curl | bash' users (download music before animation starts)
+if [ ! -f "$(dirname "$0")/installer_bgm.mp3" ] && [ ! -f "/tmp/installer_bgm.mp3" ]; then
+    curl -sLo /tmp/installer_bgm.mp3 https://raw.githubusercontent.com/EasterCompany/EDE/main/installer_bgm.mp3
 fi
 
-# START
+# Background Music
+MUSIC_FILE="$(dirname "$0")/installer_bgm.mp3"
+if [ ! -f "$MUSIC_FILE" ] && [ -f "/tmp/installer_bgm.mp3" ]; then
+    MUSIC_FILE="/tmp/installer_bgm.mp3"
+fi
+
+if [ -f "$MUSIC_FILE" ]; then
+    mpv --no-video --loop "$MUSIC_FILE" > /dev/null 2>&1 &
+    MPV_PID=$!
+    trap "kill $MPV_PID 2>/dev/null; rm -f /tmp/installer_bgm.mp3" EXIT
+fi
+
 animate_intro
 
 draw_centered "${BOLD}${CYAN}Starting Darwin IDE installation...${RESET}"
 
 # Prerequisites
-PREREQS=("nvim" "pi" "git" "curl" "lazygit")
+PREREQS=("nvim" "pi" "git" "curl" "lazygit" "mpv")
 for cmd in "${PREREQS[@]}"; do
   if ! command -v "$cmd" &> /dev/null; then
     draw_centered "${RED}❌ Error: $cmd is not installed. Please install it before running this script.${RESET}"
@@ -189,6 +199,12 @@ for cmd in "${PREREQS[@]}"; do
   fi
 done
 sleep 0.2
+
+# Pre-flight for 'curl | bash' users
+if [ ! -f "$(dirname "$0")/installer_bgm.mp3" ] && [ ! -f "/tmp/installer_bgm.mp3" ]; then
+    draw_centered "${BLUE}📦 Fetching installer assets...${RESET}"
+    curl -sLo /tmp/installer_bgm.mp3 https://raw.githubusercontent.com/EasterCompany/EDE/main/installer_bgm.mp3
+fi
 
 # Repository Setup
 EDE_DIR="$HOME/EDE"
