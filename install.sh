@@ -146,6 +146,7 @@ function animate_intro() {
     # 1. Easter Co
     echo -ne "$CLEAR"
     draw_centered "\n\n\n$FRAME2"
+    sleep 0.2
     sleep 1.0
     
     # Flicker
@@ -154,6 +155,7 @@ function animate_intro() {
     # 2. Presents
     echo -ne "$CLEAR"
     draw_centered "\n\n\n$FRAMEP"
+    sleep 0.2
     sleep 1.0
     
     # Flicker
@@ -162,8 +164,16 @@ function animate_intro() {
     # 3. Final: Darwin IDE
     echo -ne "$CLEAR"
     draw_centered "\n\n\n$FRAME3"
+    sleep 0.2
     echo -e "\n\n"
 }
+
+# Background Music
+if [ -f "$(dirname "$0")/installer_bgm.mp3" ]; then
+    mpv --no-video --loop "$(dirname "$0")/installer_bgm.mp3" > /dev/null 2>&1 &
+    MPV_PID=$!
+    trap "kill $MPV_PID 2>/dev/null" EXIT
+fi
 
 # START
 animate_intro
@@ -178,6 +188,7 @@ for cmd in "${PREREQS[@]}"; do
     exit 1
   fi
 done
+sleep 0.2
 
 # Repository Setup
 EDE_DIR="$HOME/EDE"
@@ -188,6 +199,7 @@ else
   draw_centered "${BLUE}📂 Updating Darwin EDE repository...${RESET}"
   cd "$EDE_DIR" && git pull 2>&1 | draw_centered
 fi
+sleep 0.2
 
 # Neovim Configuration Setup
 NVIM_CONFIG_DIR="$HOME/.config/nvim"
@@ -200,11 +212,13 @@ if [ -d "$NVIM_CONFIG_DIR" ]; then
   draw_centered "${BLUE}📦 Backing up existing Neovim configuration to $(basename "$BACKUP_DIR")...${RESET}"
   mv "$NVIM_CONFIG_DIR" "$BACKUP_DIR"
 fi
+sleep 0.2
 
 draw_centered "${CYAN}🔗 Installing Darwin Neovim configuration...${RESET}"
 mkdir -p "$(dirname "$NVIM_CONFIG_DIR")"
 cp -r "$EDE_DIR/nvim" "$NVIM_CONFIG_DIR"
 chmod +x "$NVIM_CONFIG_DIR/scripts/darwin-cli.sh"
+sleep 0.2
 
 # Pi Agent Setup
 PI_AGENT_DIR="$HOME/.pi/agent"
@@ -214,6 +228,7 @@ cp "$EDE_DIR/pi/settings.json" "$PI_AGENT_DIR/settings.json"
 cp "$EDE_DIR/pi/extensions/darwin-branding.ts" "$PI_AGENT_DIR/extensions/darwin-branding.ts"
 cp "$EDE_DIR/pi/extensions/monitor.ts" "$PI_AGENT_DIR/extensions/monitor.ts"
 sed -i "s|/root/|$HOME/|g" "$PI_AGENT_DIR/settings.json"
+sleep 0.2
 
 # Darwin CLI Setup
 draw_centered "${CYAN}🚀 Configuring Darwin CLI Aliases...${RESET}"
@@ -230,6 +245,7 @@ if [ -n "$SHELL_CONFIG" ]; then
     echo "alias ide='nvim'" >> "$SHELL_CONFIG"
   fi
 fi
+sleep 0.2
 
 # Final Summary Screen
 SUMMARY="
