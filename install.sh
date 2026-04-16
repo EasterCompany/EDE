@@ -191,7 +191,7 @@ if [ -f "$MUSIC_FILE" ]; then
     # Use ffplay with absolute path to ensure it finds the file
     ABS_MUSIC_FILE=$(realpath "$MUSIC_FILE")
     # Forcing sndio as per previous successful logs
-    SDL_AUDIODRIVER=sndio ffplay -nodisp -loop 0 -volume 100 "$ABS_MUSIC_FILE" > /dev/null 2>&1 &
+    SDL_AUDIODRIVER=sndio ffplay -nodisp -volume 100 "$ABS_MUSIC_FILE" > /dev/null 2>&1 &
     FFPLAY_PID=$!
     trap "kill $FFPLAY_PID 2>/dev/null; rm -f /tmp/installer_bgm.mp3" EXIT
 fi
@@ -354,6 +354,9 @@ if [ -n "$SHELL_CONFIG" ]; then
 fi
 sleep 0.2
 
+# Stop the music now that setup is complete
+[ -n "$FFPLAY_PID" ] && kill $FFPLAY_PID 2>/dev/null
+
 # Post-Install Cleanup Prompt
 echo -e "\n"
 DELETE_REPO=false
@@ -382,14 +385,12 @@ if [ "$AUTO_CONFIRM" = false ]; then
     read -n 1 -s < /dev/tty
 fi
 
-# Stop the music
-[ -n "$FFPLAY_PID" ] && kill $FFPLAY_PID 2>/dev/null
-
 if [ "$DELETE_REPO" = true ]; then
     draw_centered "${BLUE}🗑️ Removing source repository ($EDE_DIR)...${RESET}"
     rm -rf "$EDE_DIR"
 fi
 
 # Launch Darwin IDE
+[ -n "$FFPLAY_PID" ] && kill $FFPLAY_PID 2>/dev/null
 cd "$HOME"
 exec nvim
