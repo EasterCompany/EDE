@@ -227,7 +227,8 @@ if [ -d "$NVIM_CONFIG_DIR" ]; then
   
   # 2. Create new identifiable backup
   BACKUP_DIR="$HOME/.config/${BACKUP_PREFIX}.$(date +%Y%m%d_%H%M%S)"
-  draw_centered "${BLUE}📦 Backing up existing Neovim configuration to $(basename "$BACKUP_DIR")...${RESET}"
+  draw_centered "${BLUE}📦 Backing up existing Neovim configuration to:${RESET}"
+  draw_centered "${BLUE}$(basename "$BACKUP_DIR")...${RESET}"
   mv "$NVIM_CONFIG_DIR" "$BACKUP_DIR"
 fi
 sleep 0.2
@@ -272,7 +273,7 @@ if [ "$AUTO_CONFIRM" = true ]; then
     DELETE_REPO=true
 else
     draw_centered "${BOLD}${ORANGE}Delete (Y) or Keep (n) the source code repository?${RESET}"
-    read -n 1 -r REPLY < /dev/tty
+    read -s -n 1 -r REPLY < /dev/tty
     echo -e "\n"
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         DELETE_REPO=true
