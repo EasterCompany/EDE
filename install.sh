@@ -178,7 +178,7 @@ function animate_intro() {
 # Pre-flight for audio (handle before anything else)
 MUSIC_FILE="$(dirname "$0")/installer_bgm.mp3"
 
-# Ensure music exists
+# Look for the correct filename 'installer_bgm.mp3' (not 'install_bgm.mp3')
 if [ ! -f "$MUSIC_FILE" ] && [ ! -f "/tmp/installer_bgm.mp3" ]; then
     curl -sLo /tmp/installer_bgm.mp3 https://raw.githubusercontent.com/EasterCompany/EDE/main/installer_bgm.mp3 || true
 fi
@@ -188,12 +188,11 @@ if [ ! -f "$MUSIC_FILE" ] && [ -f "/tmp/installer_bgm.mp3" ]; then
 fi
 
 if [ -f "$MUSIC_FILE" ]; then
-    # Start audio immediately at 100% volume in background
-    # We use SDL_AUDIODRIVER=sndio as it was the only one that worked in logs
-    # We force volume and loop
-    SDL_AUDIODRIVER=sndio ffplay -nodisp -autoexit -loop 0 -volume 100 "$MUSIC_FILE" > /dev/null 2>&1 &
+    # Use ffplay with absolute path to ensure it finds the file
+    ABS_MUSIC_FILE=$(realpath "$MUSIC_FILE")
+    # Forcing sndio as per previous successful logs
+    SDL_AUDIODRIVER=sndio ffplay -nodisp -loop 0 -volume 100 "$ABS_MUSIC_FILE" > /dev/null 2>&1 &
     FFPLAY_PID=$!
-    # Trap to ensure cleanup of process and temp files
     trap "kill $FFPLAY_PID 2>/dev/null; rm -f /tmp/installer_bgm.mp3" EXIT
 fi
 
