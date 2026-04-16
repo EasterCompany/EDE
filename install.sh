@@ -1,30 +1,160 @@
 #!/bin/bash
 
-# Darwin IDE: Unified Installer
+# Darwin IDE: Animated Unified Installer
 # (C) 2026 Easter Company
 
 set -e
 
-# Darwin ASCII Art
-DARWIN_ART="
-██████╗  █████╗ ██████╗ ██╗    ██╗██╗███╗   ██╗
-██╔══██╗██╔══██╗██╔══██╗██║    ██║██║████╗  ██║
-██║  ██║███████║██████╔╝██║ █╗ ██║██║██╔██╗ ██║
-██║  ██║██╔══██║██╔══██╗██║███╗██║██║██║╚██╗██║
-██████╔╝██║  ██║██║  ██║╚███╔███╔╝██║██║ ╚████║
-╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝ ╚══╝╚══╝ ╚═╝╚═╝  ╚═══╝
+# ANSI Colors & Animations
+CLEAR="\033[2J\033[H"
+BOLD="\033[1m"
+RED="\033[31m"
+GREEN="\033[32m"
+BLUE="\033[34m"
+CYAN="\033[36m"
+ORANGE="\033[38;5;208m"
+GREY="\033[38;5;240m"
+RESET="\033[0m"
+FLICKER="\033[5m"
 
-            EASTER COMPANY DARWIN IDE
+# Rainbow Colored Branding
+R1="\033[38;5;196m" # Red
+R2="\033[38;5;208m" # Orange
+R3="\033[38;5;226m" # Yellow
+R4="\033[38;5;46m"  # Green
+R5="\033[38;5;21m"  # Blue
+R6="\033[38;5;93m"  # Purple
+ORANGE_B="\033[38;5;208;1m"
+NAVY_S="\033[38;5;17m"
+
+# Standardized 9-line Frames
+# Frame 1: Matrix Backdrop
+FRAME1="${GREY}███             ███             ███             ███
+███░            ███░            ███░            ███░
+███░            ███░            ███░            ███░
+███░            ███░            ███░            ███░
+███░            ███░            ███░            ███░
+███░            ███░            ███░            ███░
+███░            ███░            ███░            ███░
+███░            ███░            ███░            ███░
+░░░             ░░░             ░░░             ░░░${RESET}"
+
+# Frame 2: EASTER CO (Clean Rainbow) - 9 Lines
+FRAME2="
+ 
+ 
+ 
+${R1}██████  ▄▄▄   ▄▄▄▄ ▄▄▄▄▄▄ ▄▄▄▄▄ ▄▄▄▄    ▄█████  ▄▄▄
+${R2}██▄▄   ██▀██ ███▄▄   ██   ██▄▄  ██▄█▄   ██     ██▀██
+${R3}██▄▄▄▄ ██▀██ ▄▄██▀   ██   ██▄▄▄ ██ ██   ▀█████ ▀███▀ ▄
+ 
+ 
+ 
 "
 
-echo "$DARWIN_ART"
-echo "Starting Darwin IDE installation..."
+# Frame P: PRESENTS (Improved Rainbow)
+FRAMEP=" 
+ 
+ 
+ 
+${R1}P ${R2}R ${R3}E ${R4}S ${R5}E ${R6}N ${R1}T ${R2}S ${R3}. ${R4}. ${R5}.
+ 
+ 
+ 
+ 
+"
+
+# Frame 3: DARWIN IDE (Orange Shadow)
+FRAME3=" 
+ 
+ 
+${ORANGE_B}████▄   ▄▄▄  ▄▄▄▄  ▄▄   ▄▄ ▄▄ ▄▄  ▄▄   ██ ████▄  ██████
+${R2}██  ██ ██▀██ ██▄█▄ ██ ▄ ██ ██ ███▄██   ██ ██  ██ ██▄▄
+${NAVY_S}████▀  ██▀██ ██ ██  ▀█▀█▀  ██ ██ ▀██   ██ ████▀  ██▄▄▄▄
+ 
+ 
+ 
+"
+
+# BACKUP IDENTIFIER
+BACKUP_PREFIX="nvim.darwin.backup"
+
+# Parse Flags
+AUTO_CONFIRM=false
+while getopts "y" opt; do
+  case $opt in
+    y) AUTO_CONFIRM=true ;;
+    *) echo "Usage: $0 [-y]" >&2; exit 1 ;;
+  esac
+done
+
+function draw_centered() {
+    local input="$1"
+    # If no argument, read from stdin
+    if [ -z "$input" ]; then
+        input=$(cat)
+    fi
+    local term_width=$(tput cols 2>/dev/null || echo 80)
+    
+    echo -e "$input" | while IFS= read -r line; do
+        # Strip ANSI to calculate actual visible length
+        local plain=$(echo -e "$line" | sed "s/\x1B\[\([0-9]\{1,3\}\(;[0-9]\{1,3\}\)*\)\?[mGK]//g")
+        local length=${#plain}
+        local padding=$(( (term_width - length) / 2 ))
+        [ $padding -lt 0 ] && padding=0
+        printf "%${padding}s" ""
+        echo -e "$line"
+    done
+}
+
+function flicker() {
+    for i in {1..3}; do
+        echo -ne "$CLEAR"
+        draw_centered "\n\n\n$FRAME1"
+        sleep 0.08
+        echo -ne "$CLEAR"
+        sleep 0.04
+    done
+}
+
+function animate_intro() {
+    echo -ne "$CLEAR"
+    
+    # Intro Flicker
+    flicker
+    
+    # 1. Easter Co
+    echo -ne "$CLEAR"
+    draw_centered "\n\n\n$FRAME2"
+    sleep 1.0
+    
+    # Flicker
+    flicker
+    
+    # 2. Presents
+    echo -ne "$CLEAR"
+    draw_centered "\n\n\n$FRAMEP"
+    sleep 1.0
+    
+    # Flicker
+    flicker
+    
+    # 3. Final: Darwin IDE
+    echo -ne "$CLEAR"
+    draw_centered "\n\n\n$FRAME3"
+    echo -e "\n\n"
+}
+
+# START
+animate_intro
+
+draw_centered "${BOLD}${CYAN}Starting Darwin IDE installation...${RESET}"
 
 # Prerequisites
 PREREQS=("nvim" "pi" "git" "curl" "lazygit")
 for cmd in "${PREREQS[@]}"; do
   if ! command -v "$cmd" &> /dev/null; then
-    echo "❌ Error: $cmd is not installed. Please install it before running this script."
+    draw_centered "${RED}❌ Error: $cmd is not installed. Please install it before running this script.${RESET}"
     exit 1
   fi
 done
@@ -32,22 +162,26 @@ done
 # Repository Setup
 EDE_DIR="$HOME/EDE"
 if [ ! -d "$EDE_DIR" ]; then
-  echo "📥 Cloning Darwin EDE repository..."
-  git clone https://github.com/EasterCompany/EDE.git "$EDE_DIR"
+  draw_centered "${BLUE}📥 Cloning Darwin EDE repository...${RESET}"
+  git clone https://github.com/EasterCompany/EDE.git "$EDE_DIR" 2>&1 | draw_centered
 else
-  echo "📂 Updating Darwin EDE repository..."
-  cd "$EDE_DIR" && git pull
+  draw_centered "${BLUE}📂 Updating Darwin EDE repository...${RESET}"
+  cd "$EDE_DIR" && git pull 2>&1 | draw_centered
 fi
 
 # Neovim Configuration Setup
 NVIM_CONFIG_DIR="$HOME/.config/nvim"
 if [ -d "$NVIM_CONFIG_DIR" ]; then
-  BACKUP_DIR="$HOME/.config/nvim.backup.$(date +%Y%m%d_%H%M%S)"
-  echo "📦 Backing up existing Neovim configuration to $BACKUP_DIR..."
+  # 1. Delete previous Darwin-created backups
+  find "$(dirname "$NVIM_CONFIG_DIR")" -maxdepth 1 -name "${BACKUP_PREFIX}.*" -type d -exec rm -rf {} + 2>/dev/null || true
+  
+  # 2. Create new identifiable backup
+  BACKUP_DIR="$HOME/.config/${BACKUP_PREFIX}.$(date +%Y%m%d_%H%M%S)"
+  draw_centered "${BLUE}📦 Backing up existing Neovim configuration to $(basename "$BACKUP_DIR")...${RESET}"
   mv "$NVIM_CONFIG_DIR" "$BACKUP_DIR"
 fi
 
-echo "🔗 Installing Darwin Neovim configuration..."
+draw_centered "${CYAN}🔗 Installing Darwin Neovim configuration...${RESET}"
 mkdir -p "$(dirname "$NVIM_CONFIG_DIR")"
 cp -r "$EDE_DIR/nvim" "$NVIM_CONFIG_DIR"
 chmod +x "$NVIM_CONFIG_DIR/scripts/darwin-cli.sh"
@@ -55,15 +189,14 @@ chmod +x "$NVIM_CONFIG_DIR/scripts/darwin-cli.sh"
 # Pi Agent Setup
 PI_AGENT_DIR="$HOME/.pi/agent"
 mkdir -p "$PI_AGENT_DIR/extensions"
-echo "🛠️ Configuring Pi Agent for Darwin..."
+draw_centered "${CYAN}🛠️ Configuring Pi Agent for Darwin...${RESET}"
 cp "$EDE_DIR/pi/settings.json" "$PI_AGENT_DIR/settings.json"
 cp "$EDE_DIR/pi/extensions/darwin-branding.ts" "$PI_AGENT_DIR/extensions/darwin-branding.ts"
 cp "$EDE_DIR/pi/extensions/monitor.ts" "$PI_AGENT_DIR/extensions/monitor.ts"
-# Update path in settings.json to match user's home
 sed -i "s|/root/|$HOME/|g" "$PI_AGENT_DIR/settings.json"
 
 # Darwin CLI Setup
-echo "🚀 Configuring Darwin CLI..."
+draw_centered "${CYAN}🚀 Configuring Darwin CLI Aliases...${RESET}"
 SHELL_CONFIG=""
 if [[ "$SHELL" == *"zsh"* ]]; then
   SHELL_CONFIG="$HOME/.zshrc"
@@ -75,11 +208,35 @@ if [ -n "$SHELL_CONFIG" ]; then
   if ! grep -q "alias darwin=" "$SHELL_CONFIG"; then
     echo "alias darwin='nvim'" >> "$SHELL_CONFIG"
     echo "alias ide='nvim'" >> "$SHELL_CONFIG"
-    echo "✅ Added 'darwin' and 'ide' aliases to $SHELL_CONFIG"
   fi
 fi
 
-echo "======================================"
-echo " Darwin IDE successfully installed!   "
-echo " Run 'darwin' or 'nvim' to start.     "
-echo "======================================"
+# Final Summary Screen
+SUMMARY="
+${GREEN}======================================================
+         ${BOLD}Install Complete, press any key to start.${RESET}${GREEN}
+======================================================
+"
+
+echo -e "\n"
+draw_centered "$SUMMARY"
+read -n 1 -s
+
+# Post-Install Cleanup Prompt
+echo -e "\n"
+DELETE_REPO=false
+if [ "$AUTO_CONFIRM" = true ]; then
+    DELETE_REPO=true
+else
+    draw_centered "${BOLD}${ORANGE}Delete (Y) or Keep (n) the source code repository?${RESET}"
+    read -n 1 -r REPLY
+    echo -e "\n"
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        DELETE_REPO=true
+    fi
+fi
+
+if [ "$DELETE_REPO" = true ]; then
+    draw_centered "${BLUE}🗑️ Removing source repository ($EDE_DIR)...${RESET}"
+    rm -rf "$EDE_DIR"
+fi

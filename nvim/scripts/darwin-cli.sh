@@ -2,7 +2,7 @@
 
 # Prepend default flags to args: smallest model
 # pi uses --model
-set -- --model gemini-3-flash-preview "$@"
+set -- --model google-gemini-cli/gemini-3-flash-preview "$@"
 
 # Check for existing project-specific session and enforce 48-hour lifecycle
 CWD_SAFE=$(echo "$PWD" | sed 's/^\///; s/\//-/g; s/$/-/')

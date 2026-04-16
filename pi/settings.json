@@ -8,6 +8,8 @@
   "doubleEscapeAction": "none",
   "treeFilterMode": "default",
   "compactTools": true,
+  "models": "google-gemini-cli/gemini-3*",
+  "hideFooter": true,
   "theme": "dark",
   "extensions": [
     "/root/.pi/agent/extensions/darwin-branding.ts",
