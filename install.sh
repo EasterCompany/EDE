@@ -181,7 +181,9 @@ if [ ! -f "$MUSIC_FILE" ] && [ -f "/tmp/installer_bgm.mp3" ]; then
 fi
 
 if [ -f "$MUSIC_FILE" ]; then
-    mpv --no-video --loop "$MUSIC_FILE" > /dev/null 2>&1 &
+    # --input-terminal=no prevents mpv from grabbing the terminal, 
+    # which can cause it to stop immediately when backgrounded in some shells.
+    mpv --no-video --loop=inf --input-terminal=no "$MUSIC_FILE" > /dev/null 2>&1 &
     MPV_PID=$!
     trap "kill $MPV_PID 2>/dev/null; rm -f /tmp/installer_bgm.mp3" EXIT
 fi
@@ -263,6 +265,20 @@ if [ -n "$SHELL_CONFIG" ]; then
 fi
 sleep 0.2
 
+# Post-Install Cleanup Prompt
+echo -e "\n"
+DELETE_REPO=false
+if [ "$AUTO_CONFIRM" = true ]; then
+    DELETE_REPO=true
+else
+    draw_centered "${BOLD}${ORANGE}Delete (Y) or Keep (n) the source code repository?${RESET}"
+    read -n 1 -r REPLY < /dev/tty
+    echo -e "\n"
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        DELETE_REPO=true
+    fi
+fi
+
 # Final Summary Screen
 SUMMARY="
 ${GREEN}======================================================
@@ -272,21 +288,7 @@ ${GREEN}======================================================
 
 echo -e "\n"
 draw_centered "$SUMMARY"
-read -n 1 -s
-
-# Post-Install Cleanup Prompt
-echo -e "\n"
-DELETE_REPO=false
-if [ "$AUTO_CONFIRM" = true ]; then
-    DELETE_REPO=true
-else
-    draw_centered "${BOLD}${ORANGE}Delete (Y) or Keep (n) the source code repository?${RESET}"
-    read -n 1 -r REPLY
-    echo -e "\n"
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        DELETE_REPO=true
-    fi
-fi
+read -n 1 -s < /dev/tty
 
 if [ "$DELETE_REPO" = true ]; then
     draw_centered "${BLUE}🗑️ Removing source repository ($EDE_DIR)...${RESET}"
