@@ -1,5 +1,5 @@
 {
-  "defaultProvider": "openai",
+  "defaultProvider": "easter-company",
   "defaultModel": "darwin-cloud",
   "defaultThinkingLevel": "medium",
   "showHardwareCursor": true,
@@ -8,7 +8,7 @@
   "doubleEscapeAction": "none",
   "treeFilterMode": "default",
   "compactTools": true,
-  "models": "openai/darwin*",
+  "models": "easter-company/darwin*",
   "hideFooter": true,
   "theme": "dark",
   "extensions": [

@@ -27,9 +27,7 @@ if [ -z "$TOKEN" ] || [ -z "$EXPIRES_AT" ] || [ "$NOW" -ge "$EXPIRES_AT" ]; then
     exit 1
 fi
 
-# Pass the EID token as the API key — pi sends it as Authorization: Bearer
-export OPENAI_API_KEY="$TOKEN"
-set -- --model openai/darwin-cloud "$@"
+set -- --model easter-company/darwin-cloud "$@"
 
 # Session continuation: resume project session if active within 48 hours
 CWD_SAFE=$(echo "$PWD" | sed 's/^\///; s/\//-/g; s/$/-/')

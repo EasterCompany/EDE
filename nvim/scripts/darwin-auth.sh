@@ -1,10 +1,11 @@
 #!/bin/bash
 
 # Darwin EID Authentication
-# Logs in to EID and stores credentials for use by Darwin (EMS via Pi agent).
+# Logs in to EID and writes ~/.pi/agent/models.json with the EMS provider config.
 
 EID_URL="http://100.100.1.0:8080"
 CREDENTIALS_FILE="$HOME/.ede/credentials.json"
+MODELS_FILE="$HOME/.pi/agent/models.json"
 
 RED="\033[31m"
 GREEN="\033[32m"
@@ -13,6 +14,7 @@ BOLD="\033[1m"
 RESET="\033[0m"
 
 mkdir -p "$(dirname "$CREDENTIALS_FILE")"
+mkdir -p "$(dirname "$MODELS_FILE")"
 
 echo -e "\n${BOLD}${CYAN}Darwin — EID Authentication${RESET}\n"
 
@@ -48,7 +50,7 @@ if echo "$RESPONSE" | grep -q '"error"'; then
 fi
 
 # Extract token
-TOKEN=$(echo "$RESPONSE" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+TOKEN=$(echo "$RESPONSE" | grep -o '"token": *"[^"]*"' | grep -o '"[^"]*"$' | tr -d '"')
 
 if [ -z "$TOKEN" ]; then
     echo -e "${RED}Error: No token in response.${RESET}"
@@ -64,5 +66,24 @@ cat > "$CREDENTIALS_FILE" <<EOF
 }
 EOF
 chmod 600 "$CREDENTIALS_FILE"
+
+# Write the complete EMS provider config — darwin-auth owns this file
+cat > "$MODELS_FILE" <<EOF
+{
+  "providers": {
+    "easter-company": {
+      "baseUrl": "http://100.100.1.1:8080/v1",
+      "apiKey": "$TOKEN",
+      "api": "openai-completions",
+      "models": [
+        {
+          "id": "darwin-cloud",
+          "name": "Darwin Cloud"
+        }
+      ]
+    }
+  }
+}
+EOF
 
 echo -e "${GREEN}✓ Authenticated as ${USERNAME}. Darwin is ready.${RESET}\n"
