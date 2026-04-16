@@ -181,9 +181,9 @@ if [ ! -f "$MUSIC_FILE" ] && [ -f "/tmp/installer_bgm.mp3" ]; then
 fi
 
 if [ -f "$MUSIC_FILE" ]; then
-    # --input-terminal=no prevents mpv from grabbing the terminal, 
-    # which can cause it to stop immediately when backgrounded in some shells.
-    mpv --no-video --loop=inf --input-terminal=no "$MUSIC_FILE" > /dev/null 2>&1 &
+    # --input-terminal=no prevents mpv from grabbing the terminal
+    # --volume=100 ensures it's audible
+    mpv --no-video --loop=inf --input-terminal=no --volume=100 "$MUSIC_FILE" > /dev/null 2>&1 &
     MPV_PID=$!
     trap "kill $MPV_PID 2>/dev/null; rm -f /tmp/installer_bgm.mp3" EXIT
 fi
@@ -291,7 +291,14 @@ echo -e "\n"
 draw_centered "$SUMMARY"
 read -n 1 -s < /dev/tty
 
+# Stop the music
+[ -n "$MPV_PID" ] && kill $MPV_PID 2>/dev/null
+
 if [ "$DELETE_REPO" = true ]; then
     draw_centered "${BLUE}🗑️ Removing source repository ($EDE_DIR)...${RESET}"
     rm -rf "$EDE_DIR"
 fi
+
+# Launch Darwin IDE
+cd "$HOME"
+exec nvim
