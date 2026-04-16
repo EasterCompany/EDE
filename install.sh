@@ -96,6 +96,14 @@ ${ORANGE_B}░       ░░░░      ░░░       ░░░  ░░░░  
 # BACKUP IDENTIFIER
 BACKUP_PREFIX="nvim.darwin.backup"
 
+# Detect remote (curl|bash) vs local run.
+# When piped from curl, $0 is "bash" — it never contains the script filename.
+if [[ "$0" == *"install.sh"* ]]; then
+    REMOTE_INSTALL=false
+else
+    REMOTE_INSTALL=true
+fi
+
 # Parse Flags
 AUTO_CONFIRM=false
 SILENT_MODE=false
@@ -364,20 +372,6 @@ sleep 0.2
 # Stop the music now that setup is complete
 [ -n "$FFPLAY_PID" ] && kill $FFPLAY_PID 2>/dev/null
 
-# Post-Install Cleanup Prompt
-echo -e "\n"
-DELETE_REPO=false
-if [ "$AUTO_CONFIRM" = true ]; then
-    DELETE_REPO=true
-else
-    draw_centered "${BOLD}${ORANGE}Delete (Y) or Keep (n) the source code repository?${RESET}"
-    read -s -n 1 -r REPLY < /dev/tty
-    echo -e "\n"
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        DELETE_REPO=true
-    fi
-fi
-
 # Final Summary Screen
 SUMMARY="
 ${GREEN}======================================================
@@ -394,8 +388,7 @@ if [ "$AUTO_CONFIRM" = false ]; then
     read -n 1 -s < /dev/tty
 fi
 
-if [ "$DELETE_REPO" = true ]; then
-    draw_centered "${BLUE}🗑️ Removing source repository ($EDE_DIR)...${RESET}"
+if [ "$REMOTE_INSTALL" = true ]; then
     rm -rf "$EDE_DIR"
 fi
 
