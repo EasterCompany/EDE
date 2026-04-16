@@ -192,12 +192,97 @@ animate_intro
 
 draw_centered "${BOLD}${CYAN}Starting Darwin IDE installation...${RESET}"
 
+function install_dependency() {
+    local cmd="$1"
+    draw_centered "${ORANGE}⚠️ $cmd is missing. Attempting to install...${RESET}"
+    
+    local pkg="$cmd"
+    if [ "$cmd" = "nvim" ]; then pkg="neovim"; fi
+    
+    local SUDO_CMD=""
+    if command -v sudo &> /dev/null && [ "$EUID" -ne 0 ]; then
+        SUDO_CMD="sudo"
+    fi
+
+    if [ "$cmd" = "pi" ]; then
+        if command -v npm &> /dev/null; then
+            $SUDO_CMD npm install -g @mariozechner/pi-coding-agent
+        else
+            draw_centered "${RED}❌ Error: 'pi' is missing and 'npm' is not found. Please install manually.${RESET}"
+            exit 1
+        fi
+        return
+    fi
+
+    local PM=""
+    if command -v apt-get &> /dev/null; then PM="apt-get"
+    elif command -v brew &> /dev/null; then PM="brew"
+    elif command -v pacman &> /dev/null; then PM="pacman"
+    elif command -v dnf &> /dev/null; then PM="dnf"
+    elif command -v zypper &> /dev/null; then PM="zypper"
+    elif command -v apk &> /dev/null; then PM="apk"
+    else
+        draw_centered "${RED}❌ Error: No supported package manager found to install $cmd.${RESET}"
+        exit 1
+    fi
+
+    # Handle LazyGit binary download for Linux since it's missing in many native repos
+    if [ "$cmd" = "lazygit" ] && [ "$PM" != "brew" ] && [ "$PM" != "pacman" ]; then
+        draw_centered "${BLUE}📦 Downloading LazyGit binary...${RESET}"
+        LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -o '"tag_name": "v[^"]*"' | sed 's/"tag_name": "v//' | sed 's/"//')
+        ARCH=$(uname -m)
+        if [ "$ARCH" = "x86_64" ]; then ARCH="x86_64";
+        elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then ARCH="arm64";
+        elif [ "$ARCH" = "i386" ] || [ "$ARCH" = "i686" ]; then ARCH="x86";
+        else ARCH="x86_64"; fi
+
+        if [ -n "$LAZYGIT_VERSION" ]; then
+            curl -sLo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_${ARCH}.tar.gz"
+            tar xf lazygit.tar.gz lazygit
+            $SUDO_CMD install lazygit /usr/local/bin
+            rm lazygit.tar.gz lazygit
+        else
+            draw_centered "${RED}❌ Error: Could not fetch LazyGit release version.${RESET}"
+            exit 1
+        fi
+    else
+        case "$PM" in
+            apt-get)
+                export DEBIAN_FRONTEND=noninteractive
+                $SUDO_CMD apt-get update -y
+                $SUDO_CMD apt-get install -y "$pkg"
+                ;;
+            brew)
+                brew install "$pkg"
+                ;;
+            pacman)
+                $SUDO_CMD pacman -Sy --noconfirm "$pkg"
+                ;;
+            dnf)
+                $SUDO_CMD dnf install -y "$pkg"
+                ;;
+            zypper)
+                $SUDO_CMD zypper install -y "$pkg"
+                ;;
+            apk)
+                $SUDO_CMD apk add "$pkg"
+                ;;
+        esac
+    fi
+
+    if ! command -v "$cmd" &> /dev/null; then
+        draw_centered "${RED}❌ Error: Failed to automatically install $cmd. Please install it manually.${RESET}"
+        exit 1
+    else
+        draw_centered "${GREEN}✅ Successfully installed $cmd!${RESET}"
+    fi
+}
+
 # Prerequisites
 PREREQS=("nvim" "pi" "git" "curl" "lazygit" "mpv")
 for cmd in "${PREREQS[@]}"; do
   if ! command -v "$cmd" &> /dev/null; then
-    draw_centered "${RED}❌ Error: $cmd is not installed. Please install it before running this script.${RESET}"
-    exit 1
+    install_dependency "$cmd"
   fi
 done
 sleep 0.2
