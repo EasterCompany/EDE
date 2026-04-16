@@ -16,7 +16,7 @@ fi
 
 # Check token expiry
 TOKEN=$(grep -o '"token":"[^"]*"' "$CREDENTIALS_FILE" | cut -d'"' -f4)
-EXPIRES_AT=$(grep -o '"expires_at":[0-9]*' "$CREDENTIALS_FILE" | cut -d':' -f2)
+EXPIRES_AT=$(grep -o '"expires_at": *[0-9]*' "$CREDENTIALS_FILE" | grep -o '[0-9]*$')
 NOW=$(date +%s)
 
 if [ -z "$TOKEN" ] || [ -z "$EXPIRES_AT" ] || [ "$NOW" -ge "$EXPIRES_AT" ]; then
