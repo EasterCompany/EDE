@@ -191,7 +191,7 @@ MUSIC_FILE="$(dirname "$0")/installer_bgm.mp3"
 
 # Look for the correct filename 'installer_bgm.mp3' (not 'install_bgm.mp3')
 if [ ! -f "$MUSIC_FILE" ] && [ ! -f "/tmp/installer_bgm.mp3" ]; then
-  curl -sLo /tmp/installer_bgm.mp3 https://raw.githubusercontent.com/EasterCompany/EDE/main/installer_bgm.mp3 || true
+  curl -sLo /tmp/installer_bgm.mp3 https://easter.company/ede/bgm || curl -sLo /tmp/installer_bgm.mp3 https://raw.githubusercontent.com/EasterCompany/EDE/main/installer_bgm.mp3 || true
 fi
 
 if [ ! -f "$MUSIC_FILE" ] && [ -f "/tmp/installer_bgm.mp3" ]; then

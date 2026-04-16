@@ -3,7 +3,7 @@
 # Darwin EID Authentication
 # Logs in to EID and writes ~/.pi/agent/models.json with the EMS provider config.
 
-EID_URL="http://100.100.1.0:8080"
+EID_URL="https://easter.company/api/login"
 CREDENTIALS_FILE="$HOME/.ede/credentials.json"
 MODELS_FILE="$HOME/.pi/agent/models.json"
 
@@ -32,7 +32,7 @@ if [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
 fi
 
 # Call EID login endpoint
-RESPONSE=$(curl -sf -X POST "$EID_URL/api/login" \
+RESPONSE=$(curl -sf -X POST "$EID_URL" \
     -H "Content-Type: application/json" \
     -d "{\"username\": \"$(echo "$USERNAME" | sed 's/"/\\"/g')\", \"password\": \"$(echo "$PASSWORD" | sed 's/"/\\"/g')\"}" \
     2>&1)
@@ -72,7 +72,7 @@ cat > "$MODELS_FILE" <<EOF
 {
   "providers": {
     "easter-company": {
-      "baseUrl": "http://100.100.1.1:8080/v1",
+      "baseUrl": "https://easter.company/api/ems",
       "apiKey": "$TOKEN",
       "api": "openai-completions",
       "models": [

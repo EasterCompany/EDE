@@ -12,7 +12,7 @@
   "hideFooter": true,
   "theme": "dark",
   "extensions": [
-    "/root/.pi/agent/extensions/darwin-branding.ts",
-    "/root/.pi/agent/extensions/monitor.ts"
+    "~/.pi/agent/extensions/darwin-branding.ts",
+    "~/.pi/agent/extensions/monitor.ts"
   ]
 }
