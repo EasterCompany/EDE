@@ -3,7 +3,7 @@
 # Darwin EID Authentication
 # Logs in to EID and writes ~/.pi/agent/models.json with the EMS provider config.
 
-EID_URL="https://easter.company/api/login"
+EID_URL="https://easter.company/api/eid/login"
 CREDENTIALS_FILE="$HOME/.ede/credentials.json"
 MODELS_FILE="$HOME/.pi/agent/models.json"
 
@@ -72,7 +72,7 @@ cat > "$MODELS_FILE" <<EOF
 {
   "providers": {
     "easter-company": {
-      "baseUrl": "https://easter.company/api/ems",
+      "baseUrl": "https://easter.company/api/ems/v1",
       "apiKey": "$TOKEN",
       "api": "openai-completions",
       "models": [
