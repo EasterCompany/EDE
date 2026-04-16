@@ -21,7 +21,6 @@ Experience the complete Darwin suite with a single command:
 
 ## ⌨️ Essential Hotkeys
 
-### 🤖 AI & Monitoring
 | Shortcut | Action |
 | --- | --- |
 | `[CTRL] + \` | **Toggle Darwin CLI**: Open/Hide the AI Agent sidebar |
@@ -29,10 +28,6 @@ Experience the complete Darwin suite with a single command:
 | `[SPACE] + PS` | **Agent Monitor**: Restore the real-time AI tool-call monitor |
 | `[SPACE] + FR` | **Monitor Jump (Read)**: Jump to the file the agent is currently viewing |
 | `[SPACE] + FW` | **Monitor Jump (Edit)**: Jump to the file the agent is currently editing |
-
-### 🛠️ IDE Navigation & Tools
-| Shortcut | Action |
-| --- | --- |
 | `[CTRL] + E` | **File Explorer**: Toggle the standalone modal explorer (Auto-closes on select) |
 | `[SPACE] + SR` | **Search & Replace**: Toggle Grug-Far in the unified 40% left sidebar |
 | `[SPACE] + GG` | **Lazygit**: Open the Git interface |
