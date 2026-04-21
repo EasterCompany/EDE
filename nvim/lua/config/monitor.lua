@@ -58,6 +58,8 @@ local function update_monitor_buf()
     local header = {
       "   [ <leader>fr: Open Read-Only ]  [ <leader>fw: Open for Edit ]",
       "   ------------------------------------------------------------",
+      "",
+      "---",
       ""
     }
     lines = vim.split(content, "\n")
@@ -68,6 +70,11 @@ local function update_monitor_buf()
   vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
   
+  -- Force treesitter/markdown syntax parsing
+  vim.cmd("syntax enable")
+  -- Just in case it was disabled for this buffer
+  vim.api.nvim_set_option_value("syntax", "markdown", { buf = buf })
+
   -- Apply highlighting to the hotkeys
   vim.api.nvim_buf_clear_namespace(buf, -1, 0, -1)
   if #lines > 0 and lines[1]:find("<leader>") then

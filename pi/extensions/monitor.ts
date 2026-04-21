@@ -18,9 +18,14 @@ export default function (pi: ExtensionAPI) {
             
             content += "## Proposed Changes\n\n";
             for (const edit of input.edits) {
-                content += "### Replacement\n\n";
-                content += "**Replacing:**\n```\n" + edit.oldText + "\n```\n\n";
-                content += "**With:**\n```\n" + edit.newText + "\n```\n\n";
+                content += "### Edit Block\n\n```diff\n";
+                if (edit.oldText) {
+                    content += edit.oldText.split('\n').map(l => `- ${l}`).join('\n') + "\n";
+                }
+                if (edit.newText) {
+                    content += edit.newText.split('\n').map(l => `+ ${l}`).join('\n') + "\n";
+                }
+                content += "```\n\n";
             }
         } catch (e) {
             content += "*(Could not read file for preview)*";
@@ -32,29 +37,29 @@ export default function (pi: ExtensionAPI) {
 
   pi.on("tool_result", async (event) => {
     if (event.isError) {
-        writeFileSync(syncFile, "# Error executing tool\n\n" + JSON.stringify(event.content));
+        writeFileSync(syncFile, "# ❌ Error executing tool\n\n```json\n" + JSON.stringify(event.content, null, 2) + "\n```");
         return;
     }
     
-    let content = `# Last Action: ${event.toolName}\n\n`;
+    let content = `# ✨ Last Action: \`${event.toolName}\`\n\n`;
     const input = event.input as any;
     
     if (event.toolName === "read") {
-        content += `File: \`${input.path}\`\n\n\`\`\`${input.path.split('.').pop()}\n${event.content?.[0]?.text}\n\`\`\``;
+        content += `**File:** \`${input.path}\`\n\n\`\`\`${input.path.split('.').pop()}\n${event.content?.[0]?.text}\n\`\`\``;
     } else if (event.toolName === "bash") {
-        content += "## Command executed\n\n```bash\n" + input.command + "\n```\n\n## Output\n\n```\n" + event.content?.[0]?.text + "\n```";
+        content += "### Command executed\n\n```bash\n" + input.command + "\n```\n\n### Output\n\n```text\n" + event.content?.[0]?.text + "\n```";
     } else if (event.toolName === "edit") {
-        content += `## Edit Complete on \`${input.path}\`\n\n`;
+        content += `### Edit Complete on \`${input.path}\`\n\n`;
         try {
             const updatedContent = readFileSync(input.path, "utf-8");
-            content += "### Final File State\n\n```" + input.path.split('.').pop() + "\n" + updatedContent + "\n```";
+            content += "**Final File State:**\n\n```" + (input.path.endsWith('.md') ? 'markdown' : input.path.split('.').pop()) + "\n" + updatedContent + "\n```";
         } catch (e) {
-            content += "Tool executed successfully.";
+            content += "*(Tool executed successfully)*";
         }
     } else if (event.toolName === "write") {
-        content += `## Created/Updated File: \`${input.path}\`\n\n\`\`\`${input.path.split('.').pop()}\n${input.content}\n\`\`\``;
+        content += `### Created/Updated File: \`${input.path}\`\n\n\`\`\`${input.path.split('.').pop()}\n${input.content}\n\`\`\``;
     } else {
-        content += "Tool executed successfully.";
+        content += "*(Tool executed successfully)*";
     }
     
     writeFileSync(syncFile, content);
