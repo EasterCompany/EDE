@@ -2,12 +2,18 @@
 -- Default keymaps that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/keymaps.lua
 -- Add any additional keymaps here
 
-local function close_sidebar()
+local function close_all_sidebars()
   -- Pi
   local pi_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-cli.sh"
   local pi_term = Snacks.terminal.get(pi_cmd, { create = false })
   if pi_term and pi_term:valid() then
     pi_term:hide()
+  end
+
+  -- Standard Terminal
+  local main_term = Snacks.terminal.get(nil, { create = false })
+  if main_term and main_term:valid() then
+    main_term:hide()
   end
 
   -- Grug-far (Search & Replace)
@@ -16,12 +22,6 @@ local function close_sidebar()
     if vim.bo[buf].filetype == "grug-far" then
       vim.api.nvim_win_close(win, true)
     end
-  end
-
-  -- Standard Terminal
-  local main_term = Snacks.terminal.get(nil, { create = false })
-  if main_term and main_term:valid() then
-    main_term:hide()
   end
 end
 
@@ -59,9 +59,9 @@ vim.keymap.set({ "n", "t" }, "<C-\\>", function()
     term:hide()
   else
     -- Pi terminal is not focused or does not exist.
-    -- Ensure all other sidebars (Explorer, Standard Terminal) are closed
+    -- Ensure all other sidebars (Explorer, Standard Terminal, Grug-far) are closed
     -- before opening Pi.
-    close_sidebar()
+    close_all_sidebars()
 
     -- Now proceed to open Pi.
     if term and term:valid() then
@@ -70,7 +70,7 @@ vim.keymap.set({ "n", "t" }, "<C-\\>", function()
     else
       -- Pi terminal does not exist, create and show it.
       -- Ensure sidebar options are applied.
-      Snacks.terminal.toggle(pi_cmd, { win = { position = "left", width = 0.40, wo = { winbar = '', statusline = '' } }, interactive = true })
+      Snacks.terminal.toggle(pi_cmd, { win = { position = "left", width = 0.40, bo = { buflisted = false }, wo = { winbar = '', statusline = '', winfixwidth = true } }, interactive = true })
     end
   end
 end, { noremap = true, silent = true, desc = "Pi CLI" })
@@ -81,8 +81,8 @@ local function toggle_terminal()
   if term and term:valid() and vim.api.nvim_get_current_buf() == term.buf then
     term:hide()
   else
-    close_sidebar()
-    Snacks.terminal.toggle(nil, { win = { position = "left", width = 0.40, wo = { winbar = '', statusline = '' } } })
+    close_all_sidebars()
+    Snacks.terminal.toggle(nil, { win = { position = "left", width = 0.40, bo = { buflisted = false }, wo = { winbar = '', statusline = '', winfixwidth = true } } })
   end
 end
 
@@ -102,7 +102,7 @@ vim.keymap.set({ "n", "t" }, "<leader>ps", function()
   end
 end, { noremap = true, silent = true, desc = "Agent Monitor" })
 
--- Global keymap for Grug-far (Search & Replace) on the LEFT
+-- Global keymap for Grug-far (Search & Replace) on the RIGHT
 vim.keymap.set("n", "<leader>sr", function()
   local grug = require("grug-far")
   local existing_win = nil
@@ -117,16 +117,17 @@ vim.keymap.set("n", "<leader>sr", function()
   if existing_win then
     vim.api.nvim_win_close(existing_win, true)
   else
-    close_sidebar()
+    close_all_sidebars()
     grug.open({
-      windowCreationCommand = "topleft vsplit",
+      windowCreationCommand = "botright vsplit",
       prefills = {
         paths = vim.fn.expand("%"),
       },
     })
     vim.api.nvim_win_set_width(0, math.floor(vim.o.columns * 0.40))
+    vim.wo.winfixwidth = true
   end
-end, { desc = "Darwin: Search & Replace (Left Sidebar)" })
+end, { desc = "Darwin: Search & Replace (Right Sidebar)" })
 
 -- Jump-to-file hotkeys for monitor context
 vim.keymap.set("n", "<leader>fr", function()
@@ -151,6 +152,7 @@ vim.keymap.set({ "n", "t" }, "<leader>qe", function()
     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<A-q>", true, true, true), "n", false)
   else
     -- If not running, just open it
-    Snacks.terminal.toggle(pi_cmd, { win = { position = "left", width = 0.40, wo = { winbar = '', statusline = '' } }, interactive = true })
+    close_all_sidebars()
+    Snacks.terminal.toggle(pi_cmd, { win = { position = "left", width = 0.40, bo = { buflisted = false }, wo = { winbar = '', statusline = '', winfixwidth = true } }, interactive = true })
   end
 end, { noremap = true, silent = true, desc = "Darwin: Focus & Interrupt" })

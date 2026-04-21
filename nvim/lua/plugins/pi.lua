@@ -2,7 +2,7 @@ local pi_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-cli.sh"
 
 local function pi_opts()
   return {
-    win = { position = "left", width = 0.40, wo = { winbar = '', statusline = '' } },
+    win = { position = "left", width = 0.40, bo = { buflisted = false }, wo = { winbar = '', statusline = '', winfixwidth = true } },
     interactive = true,
   }
 end
