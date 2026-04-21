@@ -1,2 +1,2 @@
--- bootstrap lazy.nvim, LazyVim and your plugins
+-- bootstrap lazy.nvim, EDE core and your plugins
 require("config.lazy")

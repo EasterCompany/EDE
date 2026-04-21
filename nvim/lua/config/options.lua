@@ -1,5 +1,5 @@
 -- Options are automatically loaded before lazy.nvim startup
--- Default options that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/options.lua
+-- Default options that are always set: https://github.com/EasterCompany/EDE/blob/main/nvim/lua/config/options.lua
 -- Add any additional options here
 
 -- Use absolute line numbers instead of relative

@@ -58,7 +58,7 @@ Ideal for quick setup or automated scripts.
 
 ## 🏗️ System Architecture
 
-1.  **Darwin Neovim**: A high-performance config built on LazyVim. It uses absolute line numbering and is stripped of intrusive themes to respect your terminal's natural palette.
+1.  **Darwin Neovim**: A high-performance config built on the EDE core. It uses absolute line numbering and is stripped of intrusive themes to respect your terminal's natural palette.
 
 2.  **Darwin CLI Wrapper**: Orchestrates the `darwin` command, handles project-specific session lookups, and enforces the 48-hour session expiration.
 

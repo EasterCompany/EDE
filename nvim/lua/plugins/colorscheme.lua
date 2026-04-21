@@ -3,7 +3,7 @@ return {
   { "folke/tokyonight.nvim", enabled = false },
   { "catppuccin/nvim", enabled = false },
   {
-    "LazyVim/LazyVim",
+    "EasterCompany/EDE",
     opts = {
       colorscheme = "default",
     },
