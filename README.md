@@ -2,7 +2,7 @@
 
 The **Easter** Company **Development Environment (EDE)**: Which includes *Darwin AI*, and *Darwin CLI* are professional-grade software products maintained by **Easter Company** packaged as one easily installable terminal based interface.
 
-We've been building TUIs since before the AI Agentic Coding Era, and personally we have a thing or two to say about what you've all been doing with them. **TLDR; WE ARE NOT IMPRESSED**. Quite frankly, to imagine that we live in a world where top salary engineers are building JavaScript and React to make a terminal UI is near enough shameful, need we say more?
+We've been building TUIs since before the AI Agentic Coding Era, and personally we have a thing or two to say about what you've all been doing with them. **TLDR; WE ARE NOT IMPRESSED**.
 
 So we're open sourcing our entire development environment which has stood the test of time since 2016 with pre LLM AI integrations, in hopes that software engineering can get back on the right track.
 
@@ -14,11 +14,11 @@ So we're open sourcing our entire development environment which has stood the te
 - **Cinematic Aesthetic**: Local terminal theme support for visual integration into your existing environment, rather than independently configured themes.
 - **Agent Monitor**: A dedicated real-time window for monitoring AI tool calls, featuring full-file diffs and syntax-aware previews.
 
-## 📦 Installation (Apple/Linux)
+## 📦 Installation (Apple/Linux or Windows via WSL)
 
-Experience the complete Darwin suite with a single command:
+Download and Install the complete EDE (Darwin IDE and CLI) suite with a single command:
 
-### Remote Install
+### Download and Install (Apple/Linux/WSL)
 Install Darwin without cloning the repository first.
 ```bash
 curl -sL https://easter.company/ede/install | bash
@@ -26,7 +26,7 @@ curl -sL https://easter.company/ede/install | bash
 
 *Prerequisites: nvim, pi, git, curl, lazygit, mpv (The installer will attempt to auto-install any missing dependencies)*
 
-### Standard Install (Apple/Linux)
+### Clone Source and Install (Linux/WSL)
 
 Recommended for users who want to customize EDE.
 
@@ -34,12 +34,12 @@ Recommended for users who want to customize EDE.
 git clone git@github.com:EasterCompany/EDE.git && cd EDE && ./install.sh
 ```
 
-### Unattended & Silent Install (Apple/Linux)
+### Unattended Silent Install (Linux/WSL)
 
 Ideal for quick setup or automated scripts.
 
 ```bash
-./install.sh -y -s
+git clone git@github.com:EasterCompany/EDE.git && cd EDE && ./install.sh -y -s
 ```
 
 ## ⌨️ Essential Hotkeys
@@ -58,13 +58,17 @@ Ideal for quick setup or automated scripts.
 
 ## 🏗️ System Architecture
 
-1.  **Darwin Neovim**: A high-performance config built on the EDE core. It uses absolute line numbering and is stripped of intrusive themes to respect your terminal's natural palette.
+1.  **Darwin IDE based on Vim**:
+  An extremely high-performance & light-weight text editor.
+  - **Extensions**:
+    1. ...
+    2. ...
 
-2.  **Darwin CLI Wrapper**: Orchestrates the `darwin` command, handles project-specific session lookups, and enforces the 48-hour session expiration.
-
-3.  **Agent Extensions**:
-    - `darwin-branding.ts`: Ensures a unified Easter Company identity across all interactions.
-    - `monitor.ts`: Generates the real-time markdown-based visualization of the agent's internal state.
+2.  **Darwin CLI based on Pi Coding Agent**:
+  For accessibility and extensions support.
+  - **Extensions**:
+    1. `darwin-branding.ts`: Enables a unified theme across all interfaces.
+    2. `monitor.ts`: Generates a markdown-based visualization of the agent's internal state.
 
 ## 🤝 Community & Support
 
