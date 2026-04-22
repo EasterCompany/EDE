@@ -1,6 +1,6 @@
 {
   "defaultProvider": "easter-company",
-  "defaultModel": "darwin-cloud",
+  "defaultModel": "darwin-cloud-auto",
   "defaultThinkingLevel": "medium",
   "showHardwareCursor": true,
   "quietStartup": true,
