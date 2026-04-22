@@ -16,8 +16,8 @@ vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
   spec = {
-    -- add EDE core and import its plugins
-    { "EasterCompany/EDE", import = "ede.plugins" },
+    -- add EDE core (LazyVim engine) and import its plugins
+    { "LazyVim/LazyVim", import = "lazyvim.plugins" },
     -- import/override with your plugins
     { import = "plugins" },
   },

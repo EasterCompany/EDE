@@ -1,5 +1,5 @@
 vim.api.nvim_create_autocmd("User", {
-  pattern = "EDEStarted",
+  pattern = "LazyVimStarted",
   callback = function()
     vim.defer_fn(function()
       local wins = vim.api.nvim_list_wins()
