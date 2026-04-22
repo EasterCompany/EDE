@@ -32,7 +32,18 @@ fi
 # Export the token so the pi extension can read it for API access
 export DARWIN_TOKEN="$TOKEN"
 
-set -- --model easter-company/darwin-cloud "$@"
+# Check if user already provided a model flag
+HAS_MODEL=false
+for arg in "$@"; do
+    if [[ "$arg" == "--model" || "$arg" == "-m" || "$arg" == --model=* ]]; then
+        HAS_MODEL=true
+        break
+    fi
+done
+
+if [ "$HAS_MODEL" = false ]; then
+    set -- --model easter-company/darwin-cloud "$@"
+fi
 
 # Session continuation: resume project session if active within 48 hours
 CWD_SAFE=$(echo "$PWD" | sed 's/^\///; s/\//-/g; s/$/-/')
