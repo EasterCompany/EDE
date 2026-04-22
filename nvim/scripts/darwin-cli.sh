@@ -29,6 +29,9 @@ if [ -z "$TOKEN" ] || [ -z "$EXPIRES_AT" ] || [ "$NOW" -ge "$EXPIRES_AT" ]; then
     exit 0
 fi
 
+# Export the token so the pi extension can read it for API access
+export DARWIN_TOKEN="$TOKEN"
+
 set -- --model easter-company/darwin-cloud "$@"
 
 # Session continuation: resume project session if active within 48 hours
