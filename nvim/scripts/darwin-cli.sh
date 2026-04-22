@@ -11,7 +11,8 @@ if [ ! -f "$CREDENTIALS_FILE" ]; then
     echo "  Darwin requires an EID account to use Darwin Cloud."
     echo "  Run 'darwin-auth' to authenticate."
     echo ""
-    exit 1
+    read -p "Press [Enter] to close..."
+    exit 0
 fi
 
 # Check token expiry
@@ -24,7 +25,8 @@ if [ -z "$TOKEN" ] || [ -z "$EXPIRES_AT" ] || [ "$NOW" -ge "$EXPIRES_AT" ]; then
     echo "  Your Darwin session has expired."
     echo "  Run 'darwin-auth' to re-authenticate."
     echo ""
-    exit 1
+    read -p "Press [Enter] to close..."
+    exit 0
 fi
 
 set -- --model easter-company/darwin-cloud "$@"
@@ -49,4 +51,22 @@ if [ "$USE_CONTINUE" = true ]; then
     set -- --session "$LATEST_SESSION" "$@"
 fi
 
-exec pi "$@"
+if ! command -v pi >/dev/null 2>&1; then
+    echo ""
+    echo "  Error: 'pi' command not found."
+    echo "  Ensure pi-coding-agent is installed and in your PATH."
+    echo ""
+    read -p "Press [Enter] to close..."
+    exit 0
+fi
+
+pi "$@"
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -ne 0 ]; then
+    echo ""
+    echo "  Darwin CLI exited with error code: $EXIT_CODE"
+    read -p "Press [Enter] to close..."
+fi
+
+exit 0
