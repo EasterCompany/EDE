@@ -42,7 +42,7 @@ for arg in "$@"; do
 done
 
 if [ "$HAS_MODEL" = false ]; then
-    set -- --model easter-company/darwin-cloud "$@"
+    set -- --model easter-company/darwin-cloud-auto "$@"
 fi
 
 # Session continuation: resume project session if active within 48 hours

@@ -8,15 +8,6 @@ export default function (pi: ExtensionAPI) {
     api: "openai-completions",
     models: [
       {
-        id: "darwin-cloud",
-        name: "Darwin Cloud",
-        reasoning: false,
-        input: ["text"],
-        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-        contextWindow: 128000,
-        maxTokens: 8192
-      },
-      {
         id: "darwin-cloud-lite",
         name: "Darwin Cloud Lite",
         reasoning: false,
@@ -38,15 +29,6 @@ export default function (pi: ExtensionAPI) {
         id: "darwin-cloud-pro",
         name: "Darwin Cloud Pro",
         reasoning: true,
-        input: ["text"],
-        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-        contextWindow: 128000,
-        maxTokens: 8192
-      },
-      {
-        id: "darwin-local",
-        name: "Darwin Local",
-        reasoning: false,
         input: ["text"],
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
         contextWindow: 128000,
