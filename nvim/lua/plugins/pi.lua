@@ -95,14 +95,7 @@ return {
               preset = "vscode",
               preview = "main",
             },
-            actions = {
-              confirm = function(picker, item)
-                picker:close()
-                if item and item.file then
-                  vim.cmd("edit " .. vim.fn.fnameescape(item.file))
-                end
-              end,
-            },
+            jump = { close = true },
           },
         },
       },

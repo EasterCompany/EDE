@@ -37,14 +37,7 @@ vim.keymap.set({ "n", "t" }, "<C-e>", function()
         preview = "main",
         position = "float",
       },
-      actions = {
-        confirm = function(picker, item)
-          picker:close()
-          if item and item.file then
-            vim.cmd("edit " .. vim.fn.fnameescape(item.file))
-          end
-        end,
-      },
+      jump = { close = true },
     })
   end
 end, { noremap = true, silent = true, desc = "Explorer" })
