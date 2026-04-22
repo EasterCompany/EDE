@@ -2,8 +2,9 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 
 export default function (pi: ExtensionAPI) {
   pi.registerProvider("easter-company", {
-    baseUrl: "https://easter.company/ems/v1", // Adjust if actual endpoint is different
-    apiKey: "DARWIN_TOKEN", // Will be resolved from env or fallback mechanism if needed
+    baseUrl: "https://easter.company/api/ems/v1",
+    apiKey: "DARWIN_TOKEN",
+    authHeader: true,
     api: "openai-completions",
     models: [
       {
