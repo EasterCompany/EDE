@@ -11,8 +11,12 @@
   "models": "easter-company/darwin*",
   "hideFooter": true,
   "theme": "dark",
+  "packages": [
+    "/root/.pi/agent/packages/pi-annotate"
+  ],
   "extensions": [
-    "~/.pi/agent/extensions/darwin-branding.ts",
-    "~/.pi/agent/extensions/monitor.ts"
+    "/root/.pi/agent/extensions/darwin-branding.ts",
+    "/root/.pi/agent/extensions/monitor.ts",
+    "/root/.pi/agent/extensions/provider-easter.ts"
   ]
 }

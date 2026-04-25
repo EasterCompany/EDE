@@ -354,6 +354,15 @@ draw_centered "${CYAN}🛠️ Configuring Pi Agent for Darwin...${RESET}"
 cp "$EDE_DIR/pi/settings.json" "$PI_AGENT_DIR/settings.json"
 cp "$EDE_DIR/pi/extensions/darwin-branding.ts" "$PI_AGENT_DIR/extensions/darwin-branding.ts"
 cp "$EDE_DIR/pi/extensions/monitor.ts" "$PI_AGENT_DIR/extensions/monitor.ts"
+cp "$EDE_DIR/pi/extensions/provider-easter.ts" "$PI_AGENT_DIR/extensions/provider-easter.ts"
+
+# Pi Annotate Integration
+draw_centered "${CYAN}🎨 Integrating Pi Annotate...${RESET}"
+rm -rf "$PI_AGENT_DIR/packages/pi-annotate"
+mkdir -p "$PI_AGENT_DIR/packages"
+cp -r "$EDE_DIR/pi-annotate" "$PI_AGENT_DIR/packages/pi-annotate"
+(cd "$PI_AGENT_DIR/packages/pi-annotate" && npm install --omit=dev) >/dev/null 2>&1
+
 sed -i "s|/root/|$HOME/|g" "$PI_AGENT_DIR/settings.json"
 sleep 0.2
 
@@ -368,6 +377,8 @@ fi
 
 DARWIN_AUTH_SCRIPT="$HOME/.config/nvim/scripts/darwin-auth.sh"
 chmod +x "$DARWIN_AUTH_SCRIPT" 2>/dev/null
+DARWIN_ANNOTATE_SCRIPT="$HOME/.config/nvim/scripts/setup-annotate.sh"
+chmod +x "$DARWIN_ANNOTATE_SCRIPT" 2>/dev/null
 
 if [ -n "$SHELL_CONFIG" ]; then
   if ! grep -q "alias darwin=" "$SHELL_CONFIG"; then
@@ -376,6 +387,9 @@ if [ -n "$SHELL_CONFIG" ]; then
   fi
   if ! grep -q "alias darwin-auth=" "$SHELL_CONFIG"; then
     echo "alias darwin-auth='$DARWIN_AUTH_SCRIPT'" >>"$SHELL_CONFIG"
+  fi
+  if ! grep -q "alias darwin-annotate=" "$SHELL_CONFIG"; then
+    echo "alias darwin-annotate='$HOME/.config/nvim/scripts/setup-annotate.sh'" >>"$SHELL_CONFIG"
   fi
 fi
 sleep 0.2
@@ -389,6 +403,7 @@ fi
 SUMMARY="
 ${GREEN}======================================================
  Exec: ${RESET}${BOLD}darwin-auth${RESET}${GREEN} to authenticate with EID
+ Exec: ${RESET}${BOLD}darwin-annotate${RESET}${GREEN} to setup Pi Annotate
  and access Darwin Cloud services via Darwin IDE
 ======================================================${RESET}
 "
