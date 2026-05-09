@@ -8,19 +8,24 @@ export default function (pi: ExtensionAPI) {
   const sessionBuffer: string[] = [];
   const sessionId = "sess_" + Date.now().toString(36);
 
+  const EMS_CANDIDATES = [
+      "https://easter.company/api/ems/memory/episodic",
+      "http://100.100.1.1:8080/api/ems/memory/episodic",
+      "http://localhost:8080/api/ems/memory/episodic",
+  ];
+
   async function pushToEpisodicMemory(summary: string) {
-      try {
-          await fetch("http://100.100.1.1:8080/api/ems/memory/episodic", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                  session_id: sessionId,
-                  summary: summary
-              })
-          });
-          console.log("[Memory] Sent episodic memory to EMS.");
-      } catch (e) {
-          console.error("[Memory] Failed to post episodic memory:", e);
+      const body = JSON.stringify({ session_id: sessionId, summary });
+      for (const url of EMS_CANDIDATES) {
+          try {
+              const resp = await fetch(url, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body,
+                  signal: AbortSignal.timeout(3000),
+              });
+              if (resp.ok) return;
+          } catch {}
       }
   }
 
