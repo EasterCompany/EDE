@@ -87,6 +87,12 @@ vim.keymap.set({ "n", "t" }, "<leader>gg", function()
   Snacks.lazygit()
 end, { noremap = true, silent = true, desc = "Lazygit" })
 
+-- Global keymap for ETL Todo TUI
+vim.keymap.set({ "n", "t" }, "<leader>pt", function()
+  local ok, etl = pcall(require, "config.etl")
+  if ok and etl.toggle then etl.toggle() end
+end, { noremap = true, silent = true, desc = "ETL Todo List" })
+
 -- Global keymap for Pi Agent Monitor
 vim.keymap.set({ "n", "t" }, "<leader>ps", function()
   local monitor_ok, monitor = pcall(require, "config.monitor")

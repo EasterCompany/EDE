@@ -5,6 +5,24 @@ import { tmpdir } from "node:os";
 
 export default function (pi: ExtensionAPI) {
   const syncFile = "/tmp/darwin-monitor.md";
+  const sessionBuffer: string[] = [];
+  const sessionId = "sess_" + Date.now().toString(36);
+
+  async function pushToEpisodicMemory(summary: string) {
+      try {
+          await fetch("http://100.100.1.1:8080/api/ems/memory/episodic", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                  session_id: sessionId,
+                  summary: summary
+              })
+          });
+          console.log("[Memory] Sent episodic memory to EMS.");
+      } catch (e) {
+          console.error("[Memory] Failed to post episodic memory:", e);
+      }
+  }
 
   pi.on("tool_call", async (event) => {
     if (event.name === "edit") {
@@ -32,36 +50,43 @@ export default function (pi: ExtensionAPI) {
         }
         
         writeFileSync(syncFile, content);
+        sessionBuffer.push(`Intended to edit ${input.path}`);
     }
   });
 
   pi.on("tool_result", async (event) => {
     if (event.isError) {
         writeFileSync(syncFile, "# ❌ Error executing tool\n\n```json\n" + JSON.stringify(event.content, null, 2) + "\n```");
-        return;
-    }
-    
-    let content = `# ✨ Last Action: \`${event.toolName}\`\n\n`;
-    const input = event.input as any;
-    
-    if (event.toolName === "read") {
-        content += `**File:** \`${input.path}\`\n\n\`\`\`${input.path.split('.').pop()}\n${event.content?.[0]?.text}\n\`\`\``;
-    } else if (event.toolName === "bash") {
-        content += "### Command executed\n\n```bash\n" + input.command + "\n```\n\n### Output\n\n```text\n" + event.content?.[0]?.text + "\n```";
-    } else if (event.toolName === "edit") {
-        content += `### Edit Complete on \`${input.path}\`\n\n`;
-        try {
-            const updatedContent = readFileSync(input.path, "utf-8");
-            content += "**Final File State:**\n\n```" + (input.path.endsWith('.md') ? 'markdown' : input.path.split('.').pop()) + "\n" + updatedContent + "\n```";
-        } catch (e) {
-            content += "*(Tool executed successfully)*";
-        }
-    } else if (event.toolName === "write") {
-        content += `### Created/Updated File: \`${input.path}\`\n\n\`\`\`${input.path.split('.').pop()}\n${input.content}\n\`\`\``;
+        sessionBuffer.push(`Error in ${event.toolName}: ${JSON.stringify(event.content)}`);
     } else {
-        content += "*(Tool executed successfully)*";
+        let content = `# ✨ Last Action: \`${event.toolName}\`\n\n`;
+        const input = event.input as any;
+        
+        if (event.toolName === "read") {
+            content += `**File:** \`${input.path}\`\n\n\`\`\`${input.path.split('.').pop()}\n${event.content?.[0]?.text}\n\`\`\``;
+            sessionBuffer.push(`Read file ${input.path}`);
+        } else if (event.toolName === "bash") {
+            content += "### Command executed\n\n```bash\n" + input.command + "\n```\n\n### Output\n\n```text\n" + event.content?.[0]?.text + "\n```";
+            sessionBuffer.push(`Ran bash command: ${input.command}`);
+        } else if (event.toolName === "edit") {
+            content += `### Edit Complete on \`${input.path}\`\n\n`;
+            sessionBuffer.push(`Successfully edited ${input.path}`);
+        } else if (event.toolName === "write") {
+            content += `### Created/Updated File: \`${input.path}\`\n\n\`\`\`${input.path.split('.').pop()}\n${input.content}\n\`\`\``;
+            sessionBuffer.push(`Wrote file ${input.path}`);
+        } else {
+            content += "*(Tool executed successfully)*";
+            sessionBuffer.push(`Used tool ${event.toolName}`);
+        }
+        
+        writeFileSync(syncFile, content);
     }
-    
-    writeFileSync(syncFile, content);
+
+    // Every 5 actions, flush to episodic memory
+    if (sessionBuffer.length >= 5) {
+        const summary = "Recent actions:\n- " + sessionBuffer.join("\n- ");
+        await pushToEpisodicMemory(summary);
+        sessionBuffer.length = 0; // clear
+    }
   });
 }
