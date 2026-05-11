@@ -58,7 +58,7 @@ function M.toggle()
   vim.api.nvim_set_current_win(main_win)
 
   vim.fn.termopen("etl-tui", {
-    on_exit = function()
+    on_exit = function(_, code)
       -- Restore previous buffer when the TUI exits
       vim.schedule(function()
         for _, w in ipairs(vim.api.nvim_list_wins()) do
@@ -73,6 +73,26 @@ function M.toggle()
           end
         end
         etl_buf = nil
+
+        -- If exit code is 10, trigger Darwin execution mode
+        if code == 10 then
+          local prompt = [[Execute all tasks in my ETL todo list sequentially.
+1. Read the list using `etl_list_tasks`.
+2. For each task that is 'ready' and not 'completed':
+   a. Perform the necessary actions to complete the task.
+   b. Use `etl_mark_done` to mark it as completed once done.
+3. If a task requires external interaction or is blocked, explain why and move to the next.
+4. Finally, provide a detailed report of all actions taken and verify the status of the todo list.]]
+
+          local pi_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-cli.sh"
+          if _G.Snacks then
+            _G.Snacks.terminal.open(pi_cmd, {
+                win = { position = "right", width = 0.45 },
+                interactive = true,
+                args = { "-p", prompt }
+            })
+          end
+        end
       end)
     end,
   })
