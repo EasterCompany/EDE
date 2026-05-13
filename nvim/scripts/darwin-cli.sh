@@ -83,10 +83,10 @@ UPDATE_PID=$!
 FRAMES=("⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏")
 IDX=0
 
-echo -e "\n  \033[38;5;39mDarwin Intelligence\033[0m // Initializing Core System\n"
+echo ""
 
 while kill -0 $UPDATE_PID 2>/dev/null; do
-    printf "\r\033[K  \033[38;5;87m%s\033[0m Synchronizing Intelligence Protocols (checking for updates)..." "${FRAMES[$IDX]}"
+    printf "\r\033[K  \033[38;5;87m%s\033[0m Checking for updates..." "${FRAMES[$IDX]}"
     IDX=$(( (IDX + 1) % ${#FRAMES[@]} ))
     sleep 0.08
 done
@@ -95,18 +95,15 @@ wait $UPDATE_PID
 UPDATE_EXIT=$?
 
 printf "\r\033[K"
-if [ $UPDATE_EXIT -eq 0 ]; then
-    echo -e "  \033[32m✔\033[0m Agent components up-to-date."
-else
-    echo -e "  \033[33m⚠\033[0m Minor anomalies during sync (Code $UPDATE_EXIT). Continuing..."
+if [ $UPDATE_EXIT -ne 0 ]; then
+    echo -e "  \033[33m⚠\033[0m Minor anomalies during update (Code $UPDATE_EXIT). Continuing..."
 fi
 
-sleep 0.3
-printf "  \033[38;5;87mBooting Neural Link...\033[0m"
-sleep 0.3
-printf "\r\033[K"
 tput cnorm
 rm -f "$TMP_LOG"
+
+# Clear bash hash cache in case `pi` executable path changed
+hash -r
 # ----------- END UPDATE LOGIC -----------
 
 pi "$@"
