@@ -218,6 +218,7 @@ function install_dependency() {
   local pkg="$cmd"
   if [ "$cmd" = "nvim" ]; then pkg="neovim"; fi
   if [ "$cmd" = "ffplay" ]; then pkg="ffmpeg"; fi
+  if [ "$cmd" = "rg" ]; then pkg="ripgrep"; fi
 
   local SUDO_CMD=""
   if command -v sudo &>/dev/null && [ "$EUID" -ne 0 ]; then
@@ -308,7 +309,7 @@ function install_dependency() {
 }
 
 # Prerequisites
-PREREQS=("nvim" "pi" "git" "curl" "lazygit" "ffplay")
+PREREQS=("nvim" "pi" "git" "curl" "lazygit" "rg" "ffplay")
 for cmd in "${PREREQS[@]}"; do
   if ! command -v "$cmd" &>/dev/null; then
     install_dependency "$cmd"
@@ -355,6 +356,10 @@ cp "$EDE_DIR/pi/settings.json" "$PI_AGENT_DIR/settings.json"
 cp "$EDE_DIR/pi/extensions/darwin-branding.ts" "$PI_AGENT_DIR/extensions/darwin-branding.ts"
 cp "$EDE_DIR/pi/extensions/monitor.ts" "$PI_AGENT_DIR/extensions/monitor.ts"
 cp "$EDE_DIR/pi/extensions/provider-easter.ts" "$PI_AGENT_DIR/extensions/provider-easter.ts"
+cp "$EDE_DIR/pi/extensions/fetch.ts" "$PI_AGENT_DIR/extensions/fetch.ts"
+cp "$EDE_DIR/pi/extensions/search.ts" "$PI_AGENT_DIR/extensions/search.ts"
+cp "$EDE_DIR/pi/extensions/scaffold.ts" "$PI_AGENT_DIR/extensions/scaffold.ts"
+cp "$EDE_DIR/pi/extensions/memory.ts" "$PI_AGENT_DIR/extensions/memory.ts"
 
 # Pi Annotate Integration
 draw_centered "${CYAN}🎨 Integrating Pi Annotate...${RESET}"
