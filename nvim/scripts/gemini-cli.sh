@@ -45,6 +45,8 @@ if [ "$HAS_MODEL" = false ]; then
     set -- --model easter-company/gemini-cloud-auto "$@"
 fi
 
+set -- --thinking high "$@"
+
 # Session continuation: resume project session if active within 48 hours
 CWD_SAFE=$(echo "$PWD" | sed 's/^\///; s/\//-/g; s/$/-/')
 SESSION_DIR="$HOME/.pi/agent/sessions/--${CWD_SAFE}-"

@@ -13,8 +13,8 @@ export default function (pi: ExtensionAPI) {
         reasoning: false,
         input: ["text"],
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-        contextWindow: 128000,
-        maxTokens: 8192
+        contextWindow: 1000000,
+        maxTokens: 16384
       },
       {
         id: "darwin-cloud-auto",
@@ -22,8 +22,8 @@ export default function (pi: ExtensionAPI) {
         reasoning: true,
         input: ["text"],
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-        contextWindow: 128000,
-        maxTokens: 8192
+        contextWindow: 1000000,
+        maxTokens: 16384
       },
       {
         id: "darwin-cloud-pro",
@@ -31,8 +31,8 @@ export default function (pi: ExtensionAPI) {
         reasoning: true,
         input: ["text"],
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-        contextWindow: 128000,
-        maxTokens: 8192
+        contextWindow: 1000000,
+        maxTokens: 16384
       },
       {
         id: "darwin-local-lite",
@@ -67,8 +67,8 @@ export default function (pi: ExtensionAPI) {
         reasoning: false,
         input: ["text"],
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-        contextWindow: 128000,
-        maxTokens: 8192
+        contextWindow: 1000000,
+        maxTokens: 16384
       },
       {
         id: "gemini-cloud-auto",
@@ -76,8 +76,8 @@ export default function (pi: ExtensionAPI) {
         reasoning: true,
         input: ["text"],
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-        contextWindow: 128000,
-        maxTokens: 8192
+        contextWindow: 1000000,
+        maxTokens: 16384
       },
       {
         id: "gemini-cloud-pro",
@@ -85,8 +85,8 @@ export default function (pi: ExtensionAPI) {
         reasoning: true,
         input: ["text"],
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-        contextWindow: 128000,
-        maxTokens: 8192
+        contextWindow: 1000000,
+        maxTokens: 16384
       }
     ]
   });
