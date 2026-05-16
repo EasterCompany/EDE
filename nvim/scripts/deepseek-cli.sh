@@ -1,38 +1,20 @@
 #!/bin/bash
 
-# Gemini CLI — launches the Pi agent routed through EMS (Gemini Cloud).
-# Shares EID authentication with darwin-cli.
-# Lazy-loaded: does not start until opened by Ctrl+' in neovim.
+# DeepSeek CLI — launches the Pi agent with OpenCode's DeepSeek V4 Flash Free model.
+# Lazy-loaded: does not start until opened by Ctrl+; in neovim.
 
-CREDENTIALS_FILE="$HOME/.ede/credentials.json"
-
-# Check for stored EID credentials
-if [ ! -f "$CREDENTIALS_FILE" ]; then
+# Check for OpenCode credentials
+AUTH_FILE="$HOME/.local/share/opencode/auth.json"
+if [ ! -f "$AUTH_FILE" ]; then
     echo ""
-    echo "  Gemini CLI requires an EID account to use Gemini Cloud."
-    echo "  Run 'darwin-auth' to authenticate."
+    echo "  DeepSeek CLI requires an OpenCode Zen / Go subscription."
+    echo "  Run 'opencode providers login' to authenticate."
     echo ""
     read -p "Press [Enter] to close..."
     exit 0
 fi
 
-# Check token expiry
-TOKEN=$(grep -o '"token": *"[^"]*"' "$CREDENTIALS_FILE" | grep -o '"[^"]*"$' | tr -d '"')
-EXPIRES_AT=$(grep -o '"expires_at": *[0-9]*' "$CREDENTIALS_FILE" | grep -o '[0-9]*$')
-NOW=$(date +%s)
-
-if [ -z "$TOKEN" ] || [ -z "$EXPIRES_AT" ] || [ "$NOW" -ge "$EXPIRES_AT" ]; then
-    echo ""
-    echo "  Your session has expired."
-    echo "  Run 'darwin-auth' to re-authenticate."
-    echo ""
-    read -p "Press [Enter] to close..."
-    exit 0
-fi
-
-export DARWIN_TOKEN="$TOKEN"
-
-# Default to gemini-cloud-auto unless user specified --model
+# Check if user already provided a model flag
 HAS_MODEL=false
 for arg in "$@"; do
     if [[ "$arg" == "--model" || "$arg" == "-m" || "$arg" == --model=* ]]; then
@@ -42,12 +24,13 @@ for arg in "$@"; do
 done
 
 if [ "$HAS_MODEL" = false ]; then
-    set -- --model easter-company/gemini-cloud-auto "$@"
+    set -- --model opencode/deepseek-v4-flash-free "$@"
 fi
 
-set -- --thinking high --models "easter-company/gemini*" "$@"
+set -- --thinking high --models "opencode/*" "$@"
 
 # Session continuation: resume project session if active within 48 hours
+NOW=$(date +%s)
 CWD_SAFE=$(echo "$PWD" | sed 's/^\///; s/\//-/g; s/$/-/')
 SESSION_DIR="$HOME/.pi/agent/sessions/--${CWD_SAFE}-"
 
@@ -81,7 +64,7 @@ EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
     echo ""
-    echo "  Gemini CLI exited with error code: $EXIT_CODE"
+    echo "  DeepSeek CLI exited with error code: $EXIT_CODE"
     read -p "Press [Enter] to close..."
 fi
 

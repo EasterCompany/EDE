@@ -18,6 +18,7 @@
     "/root/.pi/agent/extensions/darwin-branding.ts",
     "/root/.pi/agent/extensions/monitor.ts",
     "/root/.pi/agent/extensions/provider-easter.ts",
+    "/root/.pi/agent/extensions/provider-opencode.ts",
     "/root/.pi/agent/extensions/etl.ts"
   ]
 }

@@ -45,8 +45,8 @@ if [ "$HAS_MODEL" = false ]; then
     set -- --model easter-company/darwin-cloud-auto "$@"
 fi
 
-# Always use high thinking level — this is set at the CLI level, not user-configurable
-set -- --thinking high "$@"
+# Always use high thinking level and restrict model scope to darwin models
+set -- --thinking high --models "easter-company/darwin*" "$@"
 
 # Session continuation: resume project session if active within 48 hours
 CWD_SAFE=$(echo "$PWD" | sed 's/^\///; s/\//-/g; s/$/-/')

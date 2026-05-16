@@ -85,6 +85,23 @@ vim.keymap.set({ "n", "t" }, "<C-'>", function()
   end
 end, { noremap = true, silent = true, desc = "Gemini CLI" })
 
+-- Global keymap for DeepSeek CLI terminal
+vim.keymap.set({ "n", "t" }, "<C-;>", function()
+  local deepseek_cmd = vim.fn.stdpath("config") .. "/scripts/deepseek-cli.sh"
+  local term = Snacks.terminal.get(deepseek_cmd, { create = false })
+
+  if term and term:valid() and vim.api.nvim_get_current_buf() == term.buf then
+    term:hide()
+  else
+    close_all_sidebars()
+    if term and term:valid() then
+      term:show():focus()
+    else
+      Snacks.terminal.toggle(deepseek_cmd, { win = { position = "left", width = 0.40, bo = { buflisted = false }, wo = { winbar = '', statusline = '', winfixwidth = true } }, interactive = true })
+    end
+  end
+end, { noremap = true, silent = true, desc = "DeepSeek CLI" })
+
 -- Global keymap for Standard Terminal
 local function toggle_terminal()
   local term = Snacks.terminal.get(nil, { create = false })
