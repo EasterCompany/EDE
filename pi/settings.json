@@ -8,7 +8,7 @@
   "doubleEscapeAction": "none",
   "treeFilterMode": "default",
   "compactTools": true,
-  "models": "easter-company/darwin*",
+  "models": "easter-company/darwin*,easter-company/gemini*",
   "hideFooter": true,
   "theme": "dark",
   "packages": [

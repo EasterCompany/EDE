@@ -68,6 +68,23 @@ vim.keymap.set({ "n", "t" }, "<C-\\>", function()
   end
 end, { noremap = true, silent = true, desc = "Pi CLI" })
 
+-- Global keymap for Gemini CLI terminal
+vim.keymap.set({ "n", "t" }, "<C-'>", function()
+  local gemini_cmd = vim.fn.stdpath("config") .. "/scripts/gemini-cli.sh"
+  local term = Snacks.terminal.get(gemini_cmd, { create = false })
+
+  if term and term:valid() and vim.api.nvim_get_current_buf() == term.buf then
+    term:hide()
+  else
+    close_all_sidebars()
+    if term and term:valid() then
+      term:show():focus()
+    else
+      Snacks.terminal.toggle(gemini_cmd, { win = { position = "left", width = 0.40, bo = { buflisted = false }, wo = { winbar = '', statusline = '', winfixwidth = true } }, interactive = true })
+    end
+  end
+end, { noremap = true, silent = true, desc = "Gemini CLI" })
+
 -- Global keymap for Standard Terminal
 local function toggle_terminal()
   local term = Snacks.terminal.get(nil, { create = false })

@@ -60,6 +60,33 @@ export default function (pi: ExtensionAPI) {
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
         contextWindow: 128000,
         maxTokens: 8192
+      },
+      {
+        id: "gemini-cloud-lite",
+        name: "Gemini Cloud Lite",
+        reasoning: false,
+        input: ["text"],
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+        contextWindow: 128000,
+        maxTokens: 8192
+      },
+      {
+        id: "gemini-cloud-auto",
+        name: "Gemini Cloud Auto",
+        reasoning: true,
+        input: ["text"],
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+        contextWindow: 128000,
+        maxTokens: 8192
+      },
+      {
+        id: "gemini-cloud-pro",
+        name: "Gemini Cloud Pro",
+        reasoning: true,
+        input: ["text"],
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+        contextWindow: 128000,
+        maxTokens: 8192
       }
     ]
   });
