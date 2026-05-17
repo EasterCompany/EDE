@@ -68,11 +68,6 @@ EOF
 chmod 600 "$CREDENTIALS_FILE"
 
 # Write the complete EMS provider config — darwin-auth owns this file
-# Preserve any existing opencode provider config.
-OPENCODE_KEY=""
-if [ -f "$HOME/.local/share/opencode/auth.json" ]; then
-    OPENCODE_KEY=$(grep -o '"key": *"[^"]*"' "$HOME/.local/share/opencode/auth.json" | head -1 | grep -o '"[^"]*"$' | tr -d '"')
-fi
 
 cat > "$MODELS_FILE" <<EOF
 {
@@ -85,18 +80,6 @@ cat > "$MODELS_FILE" <<EOF
         {
           "id": "darwin-cloud",
           "name": "Darwin Cloud"
-        }
-      ]
-    },
-    "opencode": {
-      "baseUrl": "https://opencode.ai/zen/v1",
-      "apiKey": "$OPENCODE_KEY",
-      "authHeader": true,
-      "api": "openai-completions",
-      "models": [
-        {
-          "id": "deepseek-v4-flash-free",
-          "name": "DeepSeek V4 Flash Free"
         }
       ]
     }

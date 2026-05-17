@@ -85,10 +85,10 @@ vim.keymap.set({ "n", "t" }, "<C-'>", function()
   end
 end, { noremap = true, silent = true, desc = "Gemini CLI" })
 
--- Global keymap for DeepSeek CLI terminal
+-- Global keymap for OpenGo CLI terminal
 vim.keymap.set({ "n", "t" }, "<C-;>", function()
-  local deepseek_cmd = vim.fn.stdpath("config") .. "/scripts/deepseek-cli.sh"
-  local term = Snacks.terminal.get(deepseek_cmd, { create = false })
+  local opengo_cmd = vim.fn.stdpath("config") .. "/scripts/deepseek-cli.sh"
+  local term = Snacks.terminal.get(opengo_cmd, { create = false })
 
   if term and term:valid() and vim.api.nvim_get_current_buf() == term.buf then
     term:hide()
@@ -97,10 +97,10 @@ vim.keymap.set({ "n", "t" }, "<C-;>", function()
     if term and term:valid() then
       term:show():focus()
     else
-      Snacks.terminal.toggle(deepseek_cmd, { win = { position = "left", width = 0.40, bo = { buflisted = false }, wo = { winbar = '', statusline = '', winfixwidth = true } }, interactive = true })
+      Snacks.terminal.toggle(opengo_cmd, { win = { position = "left", width = 0.40, bo = { buflisted = false }, wo = { winbar = '', statusline = '', winfixwidth = true } }, interactive = true })
     end
   end
-end, { noremap = true, silent = true, desc = "DeepSeek CLI" })
+end, { noremap = true, silent = true, desc = "OpenGo CLI" })
 
 -- Global keymap for Standard Terminal
 local function toggle_terminal()

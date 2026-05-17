@@ -1,13 +1,18 @@
 #!/bin/bash
 
-# DeepSeek CLI — launches the Pi agent with OpenCode's DeepSeek V4 Flash Free model.
+# OpenGo CLI — launches the Pi agent with OpenGo Cloud Auto (OpenCode backend).
 # Lazy-loaded: does not start until opened by Ctrl+; in neovim.
+#
+# Model tiers:
+#   opengo-cloud-lite  → DeepSeek V4 Flash (free tier, unlimited quota)
+#   opengo-cloud-auto  → auto: tries V4 Pro first, falls back to V4 Flash on 429/503
+#   opengo-cloud-pro   → DeepSeek V4 Pro (via Go subscription)
 
 # Check for OpenCode credentials
 AUTH_FILE="$HOME/.local/share/opencode/auth.json"
 if [ ! -f "$AUTH_FILE" ]; then
     echo ""
-    echo "  DeepSeek CLI requires an OpenCode Zen / Go subscription."
+    echo "  OpenGo CLI requires an OpenCode Zen / Go subscription."
     echo "  Run 'opencode providers login' to authenticate."
     echo ""
     read -p "Press [Enter] to close..."
@@ -24,10 +29,10 @@ for arg in "$@"; do
 done
 
 if [ "$HAS_MODEL" = false ]; then
-    set -- --model opencode/deepseek-v4-flash-free "$@"
+    set -- --model opengo/opengo-cloud-auto "$@"
 fi
 
-set -- --thinking high --models "opencode/*" "$@"
+set -- --thinking high --models "opencode/*,opengo/*" "$@"
 
 # Session continuation: resume project session if active within 48 hours
 NOW=$(date +%s)
@@ -64,7 +69,7 @@ EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
     echo ""
-    echo "  DeepSeek CLI exited with error code: $EXIT_CODE"
+    echo "  OpenGo CLI exited with error code: $EXIT_CODE"
     read -p "Press [Enter] to close..."
 fi
 
