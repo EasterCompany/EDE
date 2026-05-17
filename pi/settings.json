@@ -1,6 +1,6 @@
 {
-  "defaultProvider": "easter-company",
-  "defaultModel": "darwin-cloud-auto",
+  "defaultProvider": "opengo",
+  "defaultModel": "opengo-cloud-auto",
   "defaultThinkingLevel": "medium",
   "showHardwareCursor": true,
   "quietStartup": true,
@@ -8,7 +8,7 @@
   "doubleEscapeAction": "none",
   "treeFilterMode": "default",
   "compactTools": true,
-  "models": "easter-company/darwin*,easter-company/gemini*,opencode/*,opengo/*",
+  "models": "opengo/*",
   "hideFooter": true,
   "theme": "dark",
   "packages": [
