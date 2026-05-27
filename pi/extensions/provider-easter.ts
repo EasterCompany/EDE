@@ -60,6 +60,33 @@ export default function (pi: ExtensionAPI) {
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
         contextWindow: 128000,
         maxTokens: 8192
+      },
+      {
+        id: "darwin-opengo-lite",
+        name: "Darwin OpenGo Lite",
+        reasoning: false,
+        input: ["text"],
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+        contextWindow: 1000000,
+        maxTokens: 16384
+      },
+      {
+        id: "darwin-opengo-auto",
+        name: "Darwin OpenGo Auto",
+        reasoning: true,
+        input: ["text"],
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+        contextWindow: 1000000,
+        maxTokens: 16384
+      },
+      {
+        id: "darwin-opengo-pro",
+        name: "Darwin OpenGo Pro",
+        reasoning: true,
+        input: ["text"],
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+        contextWindow: 1000000,
+        maxTokens: 16384
       }
     ]
   });

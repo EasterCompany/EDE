@@ -4,7 +4,7 @@
 
 local function close_all_sidebars()
   -- Pi
-  local pi_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-easter-cli.sh"
+  local pi_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-cli.sh"
   local pi_term = Snacks.terminal.get(pi_cmd, { create = false })
   if pi_term and pi_term:valid() then
     pi_term:hide()
@@ -44,7 +44,7 @@ end, { noremap = true, silent = true, desc = "Explorer" })
 
 -- Global keymap for Pi CLI terminal
 vim.keymap.set({ "n", "t" }, "<C-\\>", function()
-  local pi_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-easter-cli.sh"
+  local pi_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-cli.sh"
   local term = Snacks.terminal.get(pi_cmd, { create = false })
 
   if term and term:valid() and vim.api.nvim_get_current_buf() == term.buf then
@@ -67,40 +67,6 @@ vim.keymap.set({ "n", "t" }, "<C-\\>", function()
     end
   end
 end, { noremap = true, silent = true, desc = "Pi CLI" })
-
--- Global keymap for Gemini CLI terminal
-vim.keymap.set({ "n", "t" }, "<C-'>", function()
-  local gemini_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-gemini-cli.sh"
-  local term = Snacks.terminal.get(gemini_cmd, { create = false })
-
-  if term and term:valid() and vim.api.nvim_get_current_buf() == term.buf then
-    term:hide()
-  else
-    close_all_sidebars()
-    if term and term:valid() then
-      term:show():focus()
-    else
-      Snacks.terminal.toggle(gemini_cmd, { win = { position = "left", width = 0.40, bo = { buflisted = false }, wo = { winbar = '', statusline = '', winfixwidth = true } }, interactive = true })
-    end
-  end
-end, { noremap = true, silent = true, desc = "Gemini CLI" })
-
--- Global keymap for OpenGo CLI terminal
-vim.keymap.set({ "n", "t" }, "<C-;>", function()
-  local opengo_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-opengo-cli.sh"
-  local term = Snacks.terminal.get(opengo_cmd, { create = false })
-
-  if term and term:valid() and vim.api.nvim_get_current_buf() == term.buf then
-    term:hide()
-  else
-    close_all_sidebars()
-    if term and term:valid() then
-      term:show():focus()
-    else
-      Snacks.terminal.toggle(opengo_cmd, { win = { position = "left", width = 0.40, bo = { buflisted = false }, wo = { winbar = '', statusline = '', winfixwidth = true } }, interactive = true })
-    end
-  end
-end, { noremap = true, silent = true, desc = "OpenGo CLI" })
 
 -- Global keymap for Standard Terminal
 local function toggle_terminal()
@@ -270,7 +236,7 @@ end, { desc = "Darwin: Open Monitor File (Edit)" })
 
 -- Global keymap for Darwin CLI: Focus and Interrupt
 vim.keymap.set({ "n", "t" }, "<leader>qe", function()
-  local pi_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-easter-cli.sh"
+  local pi_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-cli.sh"
   local term = Snacks.terminal.get(pi_cmd, { create = false })
 
   if term and term:valid() then

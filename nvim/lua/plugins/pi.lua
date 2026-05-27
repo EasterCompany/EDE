@@ -1,4 +1,4 @@
-local pi_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-easter-cli.sh"
+local pi_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-cli.sh"
 
 local function pi_opts()
   return {

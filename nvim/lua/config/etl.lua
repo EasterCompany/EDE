@@ -84,7 +84,7 @@ function M.toggle()
 3. If a task requires external interaction or is blocked, explain why and move to the next.
 4. Finally, provide a detailed report of all actions taken and verify the status of the todo list.]]
 
-          local pi_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-easter-cli.sh"
+          local pi_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-cli.sh"
           if _G.Snacks then
             _G.Snacks.terminal.open(pi_cmd, {
                 win = { position = "right", width = 0.45 },
