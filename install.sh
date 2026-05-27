@@ -347,7 +347,7 @@ sleep 0.2
 draw_centered "${CYAN}🔗 Installing Darwin Neovim configuration...${RESET}"
 mkdir -p "$(dirname "$NVIM_CONFIG_DIR")"
 cp -r "$EDE_DIR/nvim" "$NVIM_CONFIG_DIR"
-chmod +x "$NVIM_CONFIG_DIR/scripts/darwin-easter-cli.sh"
+chmod +x "$NVIM_CONFIG_DIR/scripts/darwin-cli.sh"
 sleep 0.2
 
 # Pi Agent Setup
