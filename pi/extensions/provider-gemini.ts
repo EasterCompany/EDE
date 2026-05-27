@@ -1,111 +1,131 @@
 /**
  * Darwin IDE — Gemini Cloud provider (Ctrl+')
  *
- * Routes pi requests through Google's Gemini API using the user's
- * existing Gemini CLI OAuth credentials. Shares Google AI Pro quota.
+ * Hijacks the local gemini CLI binary. Every pi API request is forwarded
+ * to gemini in headless mode using the user's existing OAuth credentials
+ * and Google AI Pro subscription quota — exactly like using gemini CLI.
  *
  * Models:
- *   darwin-gemini-auto  → smart routing (current best available)
+ *   darwin-gemini-auto  → gemini's default (smartest available)
  *   darwin-gemini-pro   → gemini-2.5-pro (largest context, best reasoning)
  *   darwin-gemini-flash → gemini-2.5-flash (fast, efficient)
  */
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { readFileSync } from "node:fs";
+import { spawn } from "child_process";
 import * as http from "node:http";
-import * as https from "node:https";
-
-// Google's OpenAI-compatible endpoint for Gemini
-const GEMINI_BASE = "generativelanguage.googleapis.com";
-const GEMINI_PATH = "/v1beta/openai/chat/completions";
-
-function getAccessToken(): string | null {
-  try {
-    const creds = JSON.parse(
-      readFileSync(
-        `${process.env.HOME || "/root"}/.gemini/oauth_creds.json`,
-        "utf-8",
-      ),
-    );
-    return creds.access_token || null;
-  } catch {
-    return null;
-  }
-}
 
 export default async function (pi: ExtensionAPI) {
-  const accessToken = getAccessToken();
-  if (!accessToken) {
-    console.error("[gemini] No OAuth credentials found — run 'gemini' CLI once to authenticate");
-    return;
-  }
-
-  console.error("[gemini] Starting Gemini proxy with OAuth token");
-
   const server = http.createServer((req, clientRes) => {
     const chunks: Buffer[] = [];
     req.on("data", (c: Buffer) => chunks.push(c));
     req.on("end", () => {
       let body = Buffer.concat(chunks);
 
-      // Rewrite model name to actual Gemini model
-      let actualModel = "gemini-2.5-flash";
+      // Extract the user's last message and model preference
+      let userPrompt = "";
+      let requestedModel = "darwin-gemini-auto";
       try {
         const parsed = JSON.parse(body.toString());
-        const requested = parsed.model || "";
-        if (requested.includes("gemini-pro") || requested.includes("darwin-gemini-pro")) {
-          actualModel = "gemini-2.5-pro";
-        } else if (requested.includes("gemini-flash") || requested.includes("darwin-gemini-flash")) {
-          actualModel = "gemini-2.5-flash";
-        } else if (requested.includes("gemini-auto") || requested.includes("darwin-gemini-auto")) {
-          // Auto: prefer pro, but always available
-          actualModel = "gemini-2.5-pro";
+        requestedModel = parsed.model || requestedModel;
+        const msgs = parsed.messages || [];
+        // Find the last user message
+        for (let i = msgs.length - 1; i >= 0; i--) {
+          if (msgs[i]?.role === "user" && msgs[i]?.content) {
+            if (typeof msgs[i].content === "string") {
+              userPrompt = msgs[i].content;
+            } else if (Array.isArray(msgs[i].content)) {
+              userPrompt = msgs[i].content
+                .filter((b: any) => b?.type === "text")
+                .map((b: any) => b.text || "")
+                .join("\n");
+            }
+            break;
+          }
         }
-        parsed.model = actualModel;
-        body = Buffer.from(JSON.stringify(parsed));
+        // Include system message as context
+        const systemMsg = msgs.find((m: any) => m?.role === "system" || m?.role === "developer");
+        if (systemMsg?.content && typeof systemMsg.content === "string") {
+          userPrompt = systemMsg.content + "\n\n---\n\n" + userPrompt;
+        }
       } catch {}
 
-      const options: https.RequestOptions = {
-        hostname: GEMINI_BASE,
-        port: 443,
-        path: GEMINI_PATH,
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-          "Content-Length": body.length,
-          Host: GEMINI_BASE,
-        },
-      };
-
-      const proxyReq = https.request(options, (proxyRes) => {
-        const cleanedHeaders: Record<string, string | string[]> = {};
-        if (proxyRes.headers) {
-          for (const [k, v] of Object.entries(proxyRes.headers)) {
-            if (k && !["transfer-encoding", "connection", "keep-alive"].includes(k)) {
-              cleanedHeaders[k] = v;
-            }
-          }
-        }
+      if (!userPrompt) {
         if (!clientRes.headersSent) {
-          clientRes.writeHead(proxyRes.statusCode || 200, cleanedHeaders);
+          clientRes.writeHead(400);
+          clientRes.end(JSON.stringify({ error: "No user prompt found in request" }));
         }
-        proxyRes.pipe(clientRes);
+        return;
+      }
+
+      // Map model name to gemini --model flag
+      let geminiModel = "";
+      if (requestedModel.includes("gemini-pro")) {
+        geminiModel = "gemini-2.5-pro";
+      } else if (requestedModel.includes("gemini-flash")) {
+        geminiModel = "gemini-2.5-flash";
+      }
+      // auto → no flag, let gemini CLI choose
+
+      const args = ["-p", userPrompt, "-o", "json"];
+      if (geminiModel) args.unshift("--model", geminiModel);
+
+      const child = spawn("gemini", args, {
+        env: { ...process.env, HOME: process.env.HOME || "/root" },
+        timeout: 120000,
       });
 
-      proxyReq.on("error", (err) => {
+      let stdout = "";
+      let stderr = "";
+      child.stdout.on("data", (d: Buffer) => { stdout += d.toString(); });
+      child.stderr.on("data", (d: Buffer) => { stderr += d.toString(); });
+
+      child.on("close", (code) => {
+        if (code !== 0 || !stdout.trim()) {
+          if (!clientRes.headersSent) {
+            clientRes.writeHead(502);
+            clientRes.end(JSON.stringify({
+              error: `gemini CLI exited with code ${code}: ${stderr.slice(0, 200)}`,
+            }));
+          }
+          return;
+        }
+
+        try {
+          const geminiResp = JSON.parse(stdout);
+          const text = geminiResp?.response || geminiResp?.result || geminiResp?.text || stdout;
+
+          // Convert to OpenAI-compatible format
+          const openaiResp = {
+            id: "gemini-" + Date.now(),
+            object: "chat.completion",
+            created: Math.floor(Date.now() / 1000),
+            model: requestedModel,
+            choices: [{
+              index: 0,
+              message: { role: "assistant", content: typeof text === "string" ? text : JSON.stringify(text) },
+              finish_reason: "stop",
+            }],
+            usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+          };
+
+          if (!clientRes.headersSent) {
+            clientRes.writeHead(200, { "Content-Type": "application/json" });
+            clientRes.end(JSON.stringify(openaiResp));
+          }
+        } catch (e: any) {
+          if (!clientRes.headersSent) {
+            clientRes.writeHead(502);
+            clientRes.end(JSON.stringify({ error: `Failed to parse gemini output: ${e.message}`, raw: stdout.slice(0, 500) }));
+          }
+        }
+      });
+
+      child.on("error", (err) => {
         if (!clientRes.headersSent) {
           clientRes.writeHead(502);
-          clientRes.end(JSON.stringify({ error: `Gemini proxy error: ${err.message}` }));
-        } else {
-          console.error(`[gemini] Network error after headers sent — cannot recover`);
-          if (!clientRes.writableEnded) {
-            clientRes.destroy();
-          }
+          clientRes.end(JSON.stringify({ error: `gemini CLI spawn failed: ${err.message}` }));
         }
       });
-
-      proxyReq.write(body);
-      proxyReq.end();
     });
   });
 
@@ -114,7 +134,7 @@ export default async function (pi: ExtensionAPI) {
     server.listen(0, "127.0.0.1", () => {
       const port = (server.address() as any).port;
       server.unref();
-      console.error(`[gemini] Proxy on :${port} → ${GEMINI_BASE}`);
+      console.error(`[gemini] Proxy on :${port} → gemini CLI (headless)`);
       resolve(port);
     });
   });
@@ -122,7 +142,7 @@ export default async function (pi: ExtensionAPI) {
   pi.registerProvider("gemini", {
     name: "Gemini Cloud",
     baseUrl: `http://127.0.0.1:${geminiPort}`,
-    apiKey: accessToken,
+    apiKey: "gemini-cli",  // dummy — auth is via gemini CLI's OAuth
     authHeader: true,
     api: "openai-completions",
     models: [
