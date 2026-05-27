@@ -8,15 +8,6 @@ export default function (pi: ExtensionAPI) {
     api: "openai-completions",
     models: [
       {
-        id: "darwin-local-auto",
-        name: "Darwin Local Auto",
-        reasoning: true,
-        input: ["text"],
-        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-        contextWindow: 128000,
-        maxTokens: 8192
-      },
-      {
         id: "darwin-opengo-auto",
         name: "Darwin OpenGo Auto",
         reasoning: true,
@@ -24,6 +15,15 @@ export default function (pi: ExtensionAPI) {
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
         contextWindow: 1000000,
         maxTokens: 16384
+      },
+      {
+        id: "darwin-local-auto",
+        name: "Darwin Local Auto",
+        reasoning: true,
+        input: ["text"],
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+        contextWindow: 128000,
+        maxTokens: 8192
       }
     ]
   });
