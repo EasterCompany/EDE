@@ -365,6 +365,7 @@ cp "$EDE_DIR/pi/extensions/search.ts" "$PI_AGENT_DIR/extensions/search.ts"
 cp "$EDE_DIR/pi/extensions/scaffold.ts" "$PI_AGENT_DIR/extensions/scaffold.ts"
 cp "$EDE_DIR/pi/extensions/memory.ts" "$PI_AGENT_DIR/extensions/memory.ts"
 cp "$EDE_DIR/pi/extensions/context-debug.ts" "$PI_AGENT_DIR/extensions/context-debug.ts"
+cp "$EDE_DIR/pi/extensions/footer-quota.ts" "$PI_AGENT_DIR/extensions/footer-quota.ts"
 
 # Pi Annotate Integration
 draw_centered "${CYAN}🎨 Integrating Pi Annotate...${RESET}"

@@ -9,7 +9,7 @@
   "treeFilterMode": "default",
   "compactTools": true,
   "models": "easter-company/*",
-  "hideFooter": true,
+  "hideFooter": false,
   "theme": "dark",
   "packages": [
     "/root/.pi/agent/packages/pi-annotate"
@@ -20,6 +20,7 @@
     "/root/.pi/agent/extensions/colon-nvim.ts",
     "/root/.pi/agent/extensions/provider-easter.ts",
     "/root/.pi/agent/extensions/provider-gemini.ts",
-    "/root/.pi/agent/extensions/etl.ts"
+    "/root/.pi/agent/extensions/etl.ts",
+    "/root/.pi/agent/extensions/footer-quota.ts"
   ]
 }
