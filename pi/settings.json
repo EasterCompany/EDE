@@ -1,14 +1,14 @@
 {
-  "defaultProvider": "opengo",
+  "defaultProvider": "easter-company",
   "defaultModel": "darwin-opengo-auto",
-  "defaultThinkingLevel": "medium",
+  "defaultThinkingLevel": "off",
   "showHardwareCursor": true,
   "quietStartup": true,
   "enableInstallTelemetry": false,
   "doubleEscapeAction": "none",
   "treeFilterMode": "default",
   "compactTools": true,
-  "models": "opengo/*",
+  "models": "easter-company/*",
   "hideFooter": true,
   "theme": "dark",
   "packages": [
@@ -19,7 +19,6 @@
     "/root/.pi/agent/extensions/darwin-branding.ts",
     "/root/.pi/agent/extensions/colon-nvim.ts",
     "/root/.pi/agent/extensions/provider-easter.ts",
-    "/root/.pi/agent/extensions/provider-opencode.ts",
     "/root/.pi/agent/extensions/provider-gemini.ts",
     "/root/.pi/agent/extensions/etl.ts"
   ]
