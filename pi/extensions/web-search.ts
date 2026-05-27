@@ -32,9 +32,15 @@ async function searchDuckDuckGo(query: string, maxResults: number): Promise<Sear
   const links: Array<{ url: string; title: string }> = [];
   let m;
   while ((m = linkRe.exec(html)) !== null) {
-    const url = m[1];
+    let url = m[1];
     // Skip internal DDG links
     if (url.startsWith("/") || url.startsWith("?") || url.includes("duckduckgo.com")) continue;
+    // DDG lite wraps external URLs in redirect links — extract real URL
+    if (url.startsWith("//duckduckgo.com/l/?")) {
+      const params = new URLSearchParams(url.split("?")[1]);
+      const real = params.get("uddg");
+      if (real) url = decodeURIComponent(real);
+    }
     links.push({ url, title: unescapeHTML(m[2]) });
     if (links.length >= maxResults * 2) break;
   }
