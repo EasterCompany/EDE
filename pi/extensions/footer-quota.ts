@@ -7,27 +7,37 @@ function estimateTokens(msg: any): number {
   if (Array.isArray(c)) {
     return c.reduce((s: number, p: any) => s + (p.text?.length ?? 0) / 4, 0);
   }
-  return 40; // minimal per non-text message
+  return 40;
+}
+
+function scanSession(ctx: any): number | null {
+  const cw = ctx.model?.contextWindow;
+  if (!cw || cw <= 0) return null;
+  let total = 0;
+  try {
+    for (const entry of ctx.sessionManager.getBranch()) {
+      if (entry.type === "message" || entry.type === "custom") {
+        total += estimateTokens(entry.message ?? entry);
+      }
+    }
+  } catch {
+    return null;
+  }
+  return Math.round((total / cw) * 100);
 }
 
 export default function (pi: ExtensionAPI) {
   let cachedPct: number | null = null;
 
   function update(ctx: any) {
-    const contextWindow = ctx.model?.contextWindow;
-    if (!contextWindow || contextWindow <= 0) return;
-
-    let total = 0;
-    try {
-      for (const entry of ctx.sessionManager.getBranch()) {
-        if (entry.type === "message" || entry.type === "custom") {
-          total += estimateTokens(entry.message ?? entry);
-        }
-      }
-    } catch {
-      return; // no data yet
+    // Prefer pi's built-in usage tracking (now works with our camelCase fix)
+    const usage = ctx.getContextUsage();
+    if (usage?.tokens != null && usage?.max != null && usage.max > 0) {
+      cachedPct = Math.round((usage.tokens / usage.max) * 100);
+    } else {
+      // Fallback: estimate from session entries
+      cachedPct = scanSession(ctx);
     }
-    cachedPct = Math.round((total / contextWindow) * 100);
   }
 
   pi.on("turn_end", (_event, ctx) => update(ctx));
