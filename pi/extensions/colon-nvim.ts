@@ -31,7 +31,7 @@ function execNvimCmd(cmd: string): { ok: boolean; error?: string } {
     writeFileSync(tmpFile, luaCode);
 
     execSync(
-      `nvim --server '${server}' --remote-expr "dofile('${tmpFile}')" 2>/dev/null`,
+      `nvim --server '${server}' --remote-expr "execute('luafile ${tmpFile}')" 2>/dev/null`,
       { timeout: 3000 },
     );
     return { ok: true };
