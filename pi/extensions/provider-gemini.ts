@@ -56,10 +56,15 @@ export default async function (pi: ExtensionAPI) {
       function trySpawn(cascadeIdx: number) {
         const currentModel = cascadeIdx > 0 && cascade.length > 0 ? cascade[cascadeIdx] : model;
 
-        const child = spawn("gemini", ["--model", currentModel, "-p", prompt, "-o", "json", "-y"], {
+        const child = spawn("gemini", ["--model", currentModel, "-p", "", "-o", "json", "-y"], {
           env: { ...process.env, HOME: process.env.HOME || "/root" },
+          stdio: ["pipe", "pipe", "pipe"],
           timeout: 120000,
         });
+
+        // Send full prompt via stdin (avoids E2BIG on large prompts)
+        child.stdin!.write(prompt);
+        child.stdin!.end();
 
         let stdout = "";
         let stderr = "";
