@@ -26,15 +26,16 @@ async function searchDuckDuckGo(query: string, maxResults: number): Promise<Sear
   // Parse DDG Lite HTML: links are in <a rel="nofollow" href="URL">Title</a>
   // followed by <span class="snippet">Snippet</span>
   const linkRe = /<a[^>]*href="([^"]*)"[^>]*>([^<]*)<\/a>/g;
-  const snippetRe = /<td[^>]*class="result-snippet"[^>]*>(.*?)<\/td>/gs;
+  const snippetRe = /<td[^>]*class=['"]result-snippet['"][^>]*>(.*?)<\/td>/gs;
 
   // Collect link matches
   const links: Array<{ url: string; title: string }> = [];
   let m;
   while ((m = linkRe.exec(html)) !== null) {
     let url = m[1];
-    // Skip internal DDG links
-    if (url.startsWith("/") || url.startsWith("?") || url.includes("duckduckgo.com")) continue;
+    // Skip internal DDG navigation links (but keep /l/?uddg= redirect links)
+    if (url.startsWith("/") && !url.startsWith("//duckduckgo.com/l/?")) continue;
+    if (url.startsWith("?") || url === "//duckduckgo.com/" || url.startsWith("//duckduckgo.com/?")) continue;
     // DDG lite wraps external URLs in redirect links — extract real URL
     if (url.startsWith("//duckduckgo.com/l/?")) {
       const params = new URLSearchParams(url.split("?")[1]);
@@ -96,7 +97,7 @@ async function searchStackOverflow(query: string, maxResults: number): Promise<S
   const params = new URLSearchParams({
     order: "desc",
     sort: "relevance",
-    intitle: query,
+    q: query,
     site: "stackoverflow",
     pagesize: String(maxResults),
   });
