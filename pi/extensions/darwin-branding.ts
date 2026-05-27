@@ -2,6 +2,18 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { execSync } from "child_process";
 
 export default function (pi: ExtensionAPI) {
+  // ── Source user's shell environment before every bash command ──
+  pi.on("tool_call", async (event) => {
+    if (event.toolName === "bash" && event.input?.command) {
+      const cmd = event.input.command as string;
+      // Don't double-source if already prefixed
+      if (!cmd.startsWith("source ~/.bash_profile")) {
+        event.input.command = `source ~/.bash_profile 2>/dev/null; ${cmd}`;
+      }
+    }
+  });
+
+  // ── Darwin identity injection ──
   pi.on("before_agent_start", async (event, ctx) => {
     // Detect the git repo root; fall back to process CWD.
     let workingDir = process.cwd();
@@ -24,7 +36,7 @@ If the user asks about your environment, refer to it as "Darwin IDE by Easter Co
     };
   });
 
-  pi.on("session_start", async (event, ctx) => {
+  pi.on("session_start", async (_event, ctx) => {
     ctx.ui.notify("Darwin IDE: Intelligence active.", "info");
   });
 }

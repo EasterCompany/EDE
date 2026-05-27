@@ -1,0 +1,13 @@
+[package]
+name = "darwin-context"
+version = "0.1.0"
+edition = "2021"
+description = "Darwin IDE — Prompt Context Inspector TUI"
+
+[[bin]]
+name = "darwin-context"
+path = "src/main.rs"
+
+[dependencies]
+ratatui = "0.30"
+crossterm = "0.28"

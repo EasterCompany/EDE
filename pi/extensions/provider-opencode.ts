@@ -21,11 +21,11 @@ export default async function (pi: ExtensionAPI) {
 
   // ── OpenGo provider: unified model tiers with quota-aware routing ──
   //
-  //   opengo-cloud-lite  → DeepSeek V4 Flash (free tier, unlimited quota)
-  //   opengo-cloud-auto  → best model with cascading fallbacks on exhaustion
-  //   opengo-cloud-pro   → DeepSeek V4 Pro (paid Go subscription)
+  //   darwin-opengo-lite  → DeepSeek V4 Flash (free tier, unlimited quota)
+  //   darwin-opengo-auto  → best model with cascading fallbacks on exhaustion
+  //   darwin-opengo-pro   → DeepSeek V4 Pro (paid Go subscription)
   //
-  // Only the "opengo/*" models are exposed in the model picker — all
+  // Only the "darwin-opengo/*" models are exposed in the model picker — all
   // other non-opengo providers are omitted intentionally.
 
   const LITE_MODEL = "deepseek-v4-flash-free";
@@ -45,11 +45,11 @@ export default async function (pi: ExtensionAPI) {
 
   function resolveTiers(requestedModel: string): Tier[] {
     switch (requestedModel) {
-      case "opengo-cloud-lite":
+      case "darwin-opengo-lite":
         return [{ baseUrl: FREE_BASE, model: LITE_MODEL }];
-      case "opengo-cloud-pro":
+      case "darwin-opengo-pro":
         return [{ baseUrl: PAID_BASE, model: PRO_MODEL }];
-      case "opengo-cloud-auto":
+      case "darwin-opengo-auto":
         return AUTO_CHAIN;
       default:
         // Unknown model — route through free tier as safe default
@@ -66,8 +66,10 @@ export default async function (pi: ExtensionAPI) {
     body: Buffer,
   ) {
     if (index >= tiers.length) {
-      clientRes.writeHead(502);
-      clientRes.end(JSON.stringify({ error: "All tiers exhausted" }));
+      if (!clientRes.headersSent) {
+        clientRes.writeHead(502);
+        clientRes.end(JSON.stringify({ error: "All tiers exhausted" }));
+      }
       return;
     }
 
@@ -124,17 +126,26 @@ export default async function (pi: ExtensionAPI) {
           }
         }
       }
-      clientRes.writeHead(proxyRes.statusCode || 200, cleanedHeaders);
+      if (!clientRes.headersSent) {
+        clientRes.writeHead(proxyRes.statusCode || 200, cleanedHeaders);
+      }
       proxyRes.pipe(clientRes);
     });
 
     proxyReq.on("error", (err) => {
-      if (index < tiers.length - 1) {
+      if (index < tiers.length - 1 && !clientRes.headersSent) {
         console.error(`[opengo] Network error on tier ${index}, falling through`);
         tryTier(index + 1, tiers, _req, clientRes, apiKey, body);
-      } else {
+      } else if (!clientRes.headersSent) {
         clientRes.writeHead(502);
         clientRes.end(JSON.stringify({ error: err.message }));
+      } else {
+        // Headers already sent — response is mid-stream, can't retry.
+        // Just destroy the upstream request and let the partial response stand.
+        console.error(`[opengo] Network error on tier ${index} after headers sent — cannot recover`);
+        if (!clientRes.writableEnded) {
+          clientRes.destroy();
+        }
       }
     });
 
@@ -148,7 +159,7 @@ export default async function (pi: ExtensionAPI) {
       req.on("data", (c: Buffer) => chunks.push(c));
       req.on("end", () => {
         const body = Buffer.concat(chunks);
-        let model = "opengo-cloud-auto";
+        let model = "darwin-opengo-auto";
         try {
           const parsed = JSON.parse(body.toString());
           model = parsed.model || model;
@@ -178,8 +189,8 @@ export default async function (pi: ExtensionAPI) {
       api: "openai-completions",
       models: [
         {
-          id: "opengo-cloud-lite",
-          name: "OpenGo Cloud Lite",
+          id: "darwin-opengo-lite",
+          name: "Darwin OpenGo Lite",
           reasoning: false,
           input: ["text"],
           cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
@@ -187,8 +198,8 @@ export default async function (pi: ExtensionAPI) {
           maxTokens: 16384,
         },
         {
-          id: "opengo-cloud-auto",
-          name: "OpenGo Cloud Auto",
+          id: "darwin-opengo-auto",
+          name: "Darwin OpenGo Auto",
           reasoning: true,
           input: ["text"],
           cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
@@ -196,8 +207,8 @@ export default async function (pi: ExtensionAPI) {
           maxTokens: 16384,
         },
         {
-          id: "opengo-cloud-pro",
-          name: "OpenGo Cloud Pro",
+          id: "darwin-opengo-pro",
+          name: "Darwin OpenGo Pro",
           reasoning: true,
           input: ["text"],
           cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },

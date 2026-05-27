@@ -4,9 +4,9 @@
 # Lazy-loaded: does not start until opened by Ctrl+; in neovim.
 #
 # Model tiers:
-#   opengo-cloud-lite  → DeepSeek V4 Flash (free tier, unlimited quota)
-#   opengo-cloud-auto  → auto: tries V4 Pro first, falls back to V4 Flash on 429/503
-#   opengo-cloud-pro   → DeepSeek V4 Pro (via Go subscription)
+#   darwin-opengo-lite  → DeepSeek V4 Flash (free tier, unlimited quota)
+#   darwin-opengo-auto  → auto: tries V4 Pro first, falls back to V4 Flash on 429/503
+#   darwin-opengo-pro   → DeepSeek V4 Pro (via Go subscription)
 
 # Check for OpenCode credentials
 AUTH_FILE="$HOME/.local/share/opencode/auth.json"
@@ -29,7 +29,7 @@ for arg in "$@"; do
 done
 
 if [ "$HAS_MODEL" = false ]; then
-    set -- --model opengo/opengo-cloud-auto "$@"
+    set -- --model opengo/darwin-opengo-auto "$@"
 fi
 
 set -- --thinking high --models "opencode/*,opengo/*" "$@"

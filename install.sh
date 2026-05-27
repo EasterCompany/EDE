@@ -219,6 +219,7 @@ function install_dependency() {
   if [ "$cmd" = "nvim" ]; then pkg="neovim"; fi
   if [ "$cmd" = "ffplay" ]; then pkg="ffmpeg"; fi
   if [ "$cmd" = "rg" ]; then pkg="ripgrep"; fi
+  if [ "$cmd" = "wl-copy" ]; then pkg="wl-clipboard"; fi
 
   local SUDO_CMD=""
   if command -v sudo &>/dev/null && [ "$EUID" -ne 0 ]; then
@@ -309,7 +310,7 @@ function install_dependency() {
 }
 
 # Prerequisites
-PREREQS=("nvim" "pi" "git" "curl" "lazygit" "rg" "ffplay")
+PREREQS=("nvim" "pi" "git" "curl" "lazygit" "rg" "ffplay" "xclip" "wl-copy")
 for cmd in "${PREREQS[@]}"; do
   if ! command -v "$cmd" &>/dev/null; then
     install_dependency "$cmd"
@@ -345,7 +346,7 @@ sleep 0.2
 draw_centered "${CYAN}🔗 Installing Darwin Neovim configuration...${RESET}"
 mkdir -p "$(dirname "$NVIM_CONFIG_DIR")"
 cp -r "$EDE_DIR/nvim" "$NVIM_CONFIG_DIR"
-chmod +x "$NVIM_CONFIG_DIR/scripts/darwin-cli.sh"
+chmod +x "$NVIM_CONFIG_DIR/scripts/darwin-easter-cli.sh"
 sleep 0.2
 
 # Pi Agent Setup
@@ -360,6 +361,7 @@ cp "$EDE_DIR/pi/extensions/fetch.ts" "$PI_AGENT_DIR/extensions/fetch.ts"
 cp "$EDE_DIR/pi/extensions/search.ts" "$PI_AGENT_DIR/extensions/search.ts"
 cp "$EDE_DIR/pi/extensions/scaffold.ts" "$PI_AGENT_DIR/extensions/scaffold.ts"
 cp "$EDE_DIR/pi/extensions/memory.ts" "$PI_AGENT_DIR/extensions/memory.ts"
+cp "$EDE_DIR/pi/extensions/context-debug.ts" "$PI_AGENT_DIR/extensions/context-debug.ts"
 
 # Pi Annotate Integration
 draw_centered "${CYAN}🎨 Integrating Pi Annotate...${RESET}"
@@ -367,6 +369,18 @@ rm -rf "$PI_AGENT_DIR/packages/pi-annotate"
 mkdir -p "$PI_AGENT_DIR/packages"
 cp -r "$EDE_DIR/pi-annotate" "$PI_AGENT_DIR/packages/pi-annotate"
 (cd "$PI_AGENT_DIR/packages/pi-annotate" && npm install --omit=dev) >/dev/null 2>&1
+
+# Darwin Context TUI
+draw_centered "${CYAN}🔧 Building Darwin Context Inspector...${RESET}"
+if command -v cargo &>/dev/null; then
+  (cd "$EDE_DIR/context-tui" && cargo build --release) >/dev/null 2>&1 && \
+    cp "$EDE_DIR/context-tui/target/release/darwin-context" /usr/local/bin/darwin-context 2>/dev/null && \
+    chmod +x /usr/local/bin/darwin-context 2>/dev/null && \
+    draw_centered "${GREEN}✅ Darwin Context Inspector installed.${RESET}" || \
+    draw_centered "${ORANGE}⚠️ Context TUI build skipped (check cargo).${RESET}"
+else
+  draw_centered "${ORANGE}⚠️ cargo not found — skipping context TUI build.${RESET}"
+fi
 
 sed -i "s|/root/|$HOME/|g" "$PI_AGENT_DIR/settings.json"
 sleep 0.2

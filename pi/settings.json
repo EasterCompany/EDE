@@ -1,6 +1,6 @@
 {
   "defaultProvider": "opengo",
-  "defaultModel": "opengo-cloud-auto",
+  "defaultModel": "darwin-opengo-auto",
   "defaultThinkingLevel": "medium",
   "showHardwareCursor": true,
   "quietStartup": true,

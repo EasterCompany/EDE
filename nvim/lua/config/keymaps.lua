@@ -4,7 +4,7 @@
 
 local function close_all_sidebars()
   -- Pi
-  local pi_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-cli.sh"
+  local pi_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-easter-cli.sh"
   local pi_term = Snacks.terminal.get(pi_cmd, { create = false })
   if pi_term and pi_term:valid() then
     pi_term:hide()
@@ -44,7 +44,7 @@ end, { noremap = true, silent = true, desc = "Explorer" })
 
 -- Global keymap for Pi CLI terminal
 vim.keymap.set({ "n", "t" }, "<C-\\>", function()
-  local pi_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-cli.sh"
+  local pi_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-easter-cli.sh"
   local term = Snacks.terminal.get(pi_cmd, { create = false })
 
   if term and term:valid() and vim.api.nvim_get_current_buf() == term.buf then
@@ -70,7 +70,7 @@ end, { noremap = true, silent = true, desc = "Pi CLI" })
 
 -- Global keymap for Gemini CLI terminal
 vim.keymap.set({ "n", "t" }, "<C-'>", function()
-  local gemini_cmd = vim.fn.stdpath("config") .. "/scripts/gemini-cli.sh"
+  local gemini_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-gemini-cli.sh"
   local term = Snacks.terminal.get(gemini_cmd, { create = false })
 
   if term and term:valid() and vim.api.nvim_get_current_buf() == term.buf then
@@ -87,7 +87,7 @@ end, { noremap = true, silent = true, desc = "Gemini CLI" })
 
 -- Global keymap for OpenGo CLI terminal
 vim.keymap.set({ "n", "t" }, "<C-;>", function()
-  local opengo_cmd = vim.fn.stdpath("config") .. "/scripts/deepseek-cli.sh"
+  local opengo_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-opengo-cli.sh"
   local term = Snacks.terminal.get(opengo_cmd, { create = false })
 
   if term and term:valid() and vim.api.nvim_get_current_buf() == term.buf then
@@ -135,6 +135,69 @@ vim.keymap.set({ "n", "t" }, "<leader>ps", function()
   end
 end, { noremap = true, silent = true, desc = "Agent Monitor" })
 
+-- Global keymap for Darwin Context Inspector (Prompt Context)
+-- Launches the darwin-context Rust TUI in a neovim terminal,
+-- which reads /tmp/darwin-context.md (auto-updated by the context-debug pi extension).
+vim.keymap.set("n", "<leader>pc", function()
+  local ctx_file = "/tmp/darwin-context.md"
+
+  -- Ensure the file exists (create empty if not)
+  local f = io.open(ctx_file, "r")
+  if not f then
+    local seed = io.open(ctx_file, "w")
+    if seed then
+      seed:write("# \u{1F9E0} Darwin Context Window\n\n*No context captured yet — send a prompt to populate this view.*\n")
+      seed:close()
+    end
+  else
+    f:close()
+  end
+
+  -- Launch darwin-context TUI in a terminal buffer in the main window
+  local main_win = nil
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    local config = vim.api.nvim_win_get_config(win)
+    if config.relative == "" and vim.api.nvim_win_get_width(win) > (vim.o.columns / 2) then
+      main_win = win
+      break
+    end
+  end
+  if not main_win then main_win = vim.api.nvim_get_current_win() end
+
+  -- Wipe any existing context TUI buffer (don't close windows — E444 guard)
+  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    local name = vim.api.nvim_buf_get_name(buf)
+    if name and name:match("darwin%-context") then
+      pcall(vim.api.nvim_buf_delete, buf, { force = true })
+    end
+  end
+
+  -- Create fresh buffer for the TUI, launch immediately
+  local buf = vim.api.nvim_create_buf(false, true)
+  pcall(vim.api.nvim_buf_set_name, buf, "darwin-context://inspector")
+  vim.api.nvim_win_set_buf(main_win, buf)
+  vim.api.nvim_set_current_win(main_win)
+
+  -- Disable neovim's own scrollback for this buffer so scroll events
+  -- pass through to the TUI application (which handles mouse natively)
+  vim.bo[buf].scrollback = 0
+
+  -- Launch the TUI
+  vim.fn.termopen("darwin-context", {
+    on_exit = function()
+      vim.schedule(function()
+        -- Clean up our TUI buffer
+        if buf and vim.api.nvim_buf_is_valid(buf) then
+          vim.api.nvim_buf_delete(buf, { force = true })
+        end
+        print("Darwin: Context inspector closed.")
+      end)
+    end,
+  })
+
+  vim.cmd("startinsert")
+end, { noremap = true, silent = true, desc = "Darwin: Prompt Context Inspector" })
+
 -- Global keymap for Grug-far (Search & Replace) on the RIGHT
 vim.keymap.set("n", "<leader>sr", function()
   local grug = require("grug-far")
@@ -175,7 +238,7 @@ end, { desc = "Darwin: Open Monitor File (Edit)" })
 
 -- Global keymap for Darwin CLI: Focus and Interrupt
 vim.keymap.set({ "n", "t" }, "<leader>qe", function()
-  local pi_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-cli.sh"
+  local pi_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-easter-cli.sh"
   local term = Snacks.terminal.get(pi_cmd, { create = false })
 
   if term and term:valid() then

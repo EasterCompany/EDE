@@ -6,6 +6,10 @@
 vim.opt.relativenumber = false
 vim.opt.number = true
 
+-- Sync default yank register with system clipboard (CLIPBOARD selection)
+-- so ctrl+shift+v pastes what was yanked in neovim and vice versa.
+vim.opt.clipboard = "unnamedplus"
+
 -- Set the global statusline background and thin top border
 -- Note: Setting backgrounds to NONE allows Windows Terminal scaling gaps
 -- to blend seamlessly into the terminal background color instead of showing a black border.
