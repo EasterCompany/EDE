@@ -22,6 +22,7 @@ export default async function (pi: ExtensionAPI) {
       let body = Buffer.concat(chunks);
       let model = "gemini-3.1-pro-preview";
       let cascade: string[] = [];
+      let messages: any[] = [];
 
       try {
         const parsed = JSON.parse(body.toString());
