@@ -75,7 +75,17 @@ export default function (pi: ExtensionAPI) {
     }
 
     try {
-      const luaCode = `vim.cmd("${nvimCmd.replace(/"/g, '\\"')}")`;
+      const luaCode = [
+        'for _, win in ipairs(vim.api.nvim_list_wins()) do',
+        '  local buf = vim.api.nvim_win_get_buf(win)',
+        "  if vim.bo[buf].buftype ~= 'terminal' then",
+        '    vim.api.nvim_set_current_win(win)',
+        '    break',
+        '  end',
+        'end',
+        `vim.cmd("${nvimCmd.replace(/"/g, '\\"')}")`,
+        'return "ok"',
+      ].join('\n');
       execNvimLuaAsync(luaCode).then((r) => {
         if (r.ok) {
           ctx.ui.notify(`Neovim: :${nvimCmd}`, "info");
