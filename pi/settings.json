@@ -20,6 +20,7 @@
     "/root/.pi/agent/extensions/colon-nvim.ts",
     "/root/.pi/agent/extensions/provider-easter.ts",
     "/root/.pi/agent/extensions/provider-opencode.ts",
+    "/root/.pi/agent/extensions/provider-gemini.ts",
     "/root/.pi/agent/extensions/etl.ts"
   ]
 }

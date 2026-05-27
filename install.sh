@@ -359,6 +359,8 @@ cp "$EDE_DIR/pi/extensions/darwin-branding.ts" "$PI_AGENT_DIR/extensions/darwin-
 cp "$EDE_DIR/pi/extensions/monitor.ts" "$PI_AGENT_DIR/extensions/monitor.ts"
 cp "$EDE_DIR/pi/extensions/colon-nvim.ts" "$PI_AGENT_DIR/extensions/colon-nvim.ts"
 cp "$EDE_DIR/pi/extensions/provider-easter.ts" "$PI_AGENT_DIR/extensions/provider-easter.ts"
+cp "$EDE_DIR/pi/extensions/provider-opencode.ts" "$PI_AGENT_DIR/extensions/provider-opencode.ts"
+cp "$EDE_DIR/pi/extensions/provider-gemini.ts" "$PI_AGENT_DIR/extensions/provider-gemini.ts"
 cp "$EDE_DIR/pi/extensions/fetch.ts" "$PI_AGENT_DIR/extensions/fetch.ts"
 cp "$EDE_DIR/pi/extensions/search.ts" "$PI_AGENT_DIR/extensions/search.ts"
 cp "$EDE_DIR/pi/extensions/scaffold.ts" "$PI_AGENT_DIR/extensions/scaffold.ts"
