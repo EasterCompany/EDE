@@ -69,21 +69,23 @@ export default async function (pi: ExtensionAPI) {
       function trySpawn(cascadeIdx: number) {
         const currentModel = cascadeIdx > 0 && cascade.length > 0 ? cascade[cascadeIdx] : model;
 
-        // Use -p with short prefix to signal non-interactive, pipe full text via stdin
-        const shortPrompt = prompt.substring(0, 200);
-        const remaining = prompt.substring(200);
+        // Write full prompt to temp file, reference with @ syntax
+        const promptFile = `/tmp/darwin-gemini-prompt-${Date.now()}.md`;
+        try {
+          const fs = require("fs");
+          fs.writeFileSync(promptFile, prompt);
+        } catch {}
 
-        const child = spawn("gemini", ["--model", currentModel, "-p", shortPrompt, "-o", "json", "-y"], {
+        const child = spawn("gemini", ["--model", currentModel, "-p", `@${promptFile}`, "-o", "json", "-y"], {
           env: { ...process.env, HOME: process.env.HOME || "/root" },
           stdio: ["pipe", "pipe", "pipe"],
           timeout: 120000,
         });
 
-        // Pipe remaining prompt text (if any) via stdin
-        if (remaining) {
-          child.stdin!.write(remaining);
-        }
-        child.stdin!.end();
+        // Cleanup prompt file after gemini finishes
+        child.on("close", () => {
+          try { require("fs").unlinkSync(promptFile); } catch {}
+        });
 
         let stdout = "";
         let stderr = "";
