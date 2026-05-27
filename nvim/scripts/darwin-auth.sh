@@ -39,6 +39,7 @@ RESPONSE=$(curl -sf -X POST "$EID_URL" \
 
 if [ $? -ne 0 ] || [ -z "$RESPONSE" ]; then
     echo -e "${RED}Error: Could not reach EID at $EID_URL. Are you on the network?${RESET}"
+    echo -e "${CYAN}If you don't have an EID account, register at: ${BOLD}https://easter.company/login${RESET}"
     exit 1
 fi
 
@@ -46,6 +47,7 @@ fi
 if echo "$RESPONSE" | grep -q '"error"'; then
     ERR=$(echo "$RESPONSE" | grep -o '"error":"[^"]*"' | cut -d'"' -f4)
     echo -e "${RED}Login failed: ${ERR}${RESET}"
+    echo -e "${CYAN}No EID account? Register at: ${BOLD}https://easter.company/login${RESET}"
     exit 1
 fi
 
