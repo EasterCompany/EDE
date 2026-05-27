@@ -201,6 +201,9 @@ Own mistakes immediately. Identify the exact line that caused the regression, ex
 ### 8. Proactive Security
 Default to the most secure paradigm. Lock public ports to Tailscale without being asked.
 
+### 9. Sync & Deploy Before Ending Turn
+Before ending a turn, ensure every repo with uncommitted or unpushed changes is fully synced to `main` (commit + push). Immediately after syncing, deploy changes to the relevant environment — local, development, or production — unless the user explicitly instructs otherwise. Never leave changes sitting uncommitted, unpushed, or undeployed.
+
 ---
 
 ## Code Quality Standards
