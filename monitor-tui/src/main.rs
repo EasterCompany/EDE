@@ -31,6 +31,33 @@ use std::process::Command;
 
 const MONITOR_FILE: &str = "/tmp/darwin-monitor.jsonl";
 
+// ── ANSI escape stripping ─────────────────────────────────────
+
+fn strip_ansi(text: &str) -> String {
+    let mut result = String::with_capacity(text.len());
+    let mut chars = text.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c == '\x1b' || c == '\u{1b}' {
+            if let Some(&next) = chars.peek() {
+                if next == '[' {
+                    chars.next(); // consume '['
+                    // Skip until we hit a letter (the terminator)
+                    while let Some(&inner) = chars.peek() {
+                        if inner.is_alphabetic() {
+                            chars.next(); // consume the terminator
+                            break;
+                        }
+                        chars.next();
+                    }
+                    continue;
+                }
+            }
+        }
+        result.push(c);
+    }
+    result
+}
+
 // ── Data model ─────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Deserialize)]
@@ -58,7 +85,8 @@ enum VisualMode {
 #[derive(Debug, Clone)]
 struct App {
     entries: Vec<MonitorEntry>,
-    lines: Vec<String>,       // rendered display lines
+    lines: Vec<String>,       // activity display lines
+    overview_lines: Vec<String>, // overview/stats
     chat_lines: Vec<String>,  // chat-only lines
     tab: Tab,
     scroll: usize,
@@ -71,6 +99,7 @@ struct App {
     visual_end: usize,
     last_mtime: Option<std::time::SystemTime>,
     width: u16,
+    auto_scroll: bool,
 }
 
 impl App {
@@ -78,6 +107,7 @@ impl App {
         Self {
             entries: vec![],
             lines: vec![],
+            overview_lines: vec![],
             chat_lines: vec![],
             tab: Tab::Overview,
             scroll: 0,
@@ -90,10 +120,14 @@ impl App {
             visual_end: 0,
             last_mtime: None,
             width: 80,
+            auto_scroll: true,
         }
     }
 
     fn load(&mut self) {
+        let was_at_bottom = self.auto_scroll;
+        let old_count = self.entries.len();
+
         // Check if file changed
         if let Ok(meta) = fs::metadata(MONITOR_FILE) {
             if let Ok(mtime) = meta.modified() {
@@ -113,11 +147,24 @@ impl App {
             }
         }
         self.build_lines();
+
+        // Auto-scroll if user was at bottom (or file is fresh)
+        if was_at_bottom || self.entries.len() > old_count {
+            let vc = self.visible_count();
+            if vc > 0 {
+                self.cursor = vc.saturating_sub(1);
+            }
+            self.auto_scroll = true;
+        }
     }
 
     fn build_lines(&mut self) {
         self.lines.clear();
+        self.overview_lines.clear();
         self.chat_lines.clear();
+
+        // ── Overview (stats dashboard) ───────────────────
+        self.build_overview_lines();
 
         // ── Activity lines ──────────────────────────────
         self.lines.push(format!("{} Activity Log", "─".repeat(40)));
@@ -141,8 +188,7 @@ impl App {
                 "tool_result" => {
                     let tool = entry.data["toolName"].as_str().unwrap_or("?");
                     let is_err = entry.data["isError"].as_bool().unwrap_or(false);
-                    let preview = entry.data["preview"].as_str().unwrap_or("");
-                    let ts = format_ts(entry.ts);
+                    let preview = strip_ansi(entry.data["preview"].as_str().unwrap_or(""));
                     let icon = if is_err { "❌" } else { "✓" };
                     self.lines.push(format!("  {} {} result", icon, tool));
                     if !preview.is_empty() {
@@ -179,6 +225,101 @@ impl App {
         }
 
         // ── Chat lines ──────────────────────────────────
+        self.build_chat_lines();
+    }
+
+    fn build_overview_lines(&mut self) {
+        self.overview_lines.clear();
+        self.overview_lines.push(String::new());
+        self.overview_lines.push("  🧠 DARWIN AGENT MONITOR".to_string());
+        self.overview_lines.push(String::new());
+
+        if self.entries.is_empty() {
+            self.overview_lines.push("  No activity yet — start chatting with Darwin.".to_string());
+            self.overview_lines.push(String::new());
+            self.overview_lines.push("  Press 2 for Activity Log, 3 for Chat History.".to_string());
+            return;
+        }
+
+        // Gather stats
+        let mut tool_calls = 0u32;
+        let mut tool_errors = 0u32;
+        let mut bash_commands = 0u32;
+        let mut file_reads = 0u32;
+        let mut file_writes = 0u32;
+        let mut file_edits = 0u32;
+        let mut turns = 0u32;
+        let mut model = String::from("unknown");
+        let mut session_start: Option<f64> = None;
+        let mut session_end: Option<f64> = None;
+
+        for entry in &self.entries {
+            match entry.entry_type.as_str() {
+                "tool_call" => {
+                    tool_calls += 1;
+                    let tool = entry.data["toolName"].as_str().unwrap_or("");
+                    match tool {
+                        "bash" => bash_commands += 1,
+                        "read" => file_reads += 1,
+                        "write" => file_writes += 1,
+                        "edit" => file_edits += 1,
+                        _ => {}
+                    }
+                }
+                "tool_result" => {
+                    if entry.data["isError"].as_bool().unwrap_or(false) {
+                        tool_errors += 1;
+                    }
+                }
+                "turn" => {
+                    if entry.data["event"].as_str() == Some("start") {
+                        turns += 1;
+                    }
+                }
+                "agent" => {
+                    if entry.data["event"].as_str() == Some("start") {
+                        session_start = Some(entry.ts);
+                    } else if entry.data["event"].as_str() == Some("end") {
+                        session_end = Some(entry.ts);
+                    }
+                }
+                "model" => {
+                    if let Some(m) = entry.data["model"].as_str() {
+                        model = m.to_string();
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        // Duration
+        let duration = if let (Some(s), Some(e)) = (session_start, session_end) {
+            let secs = ((e - s) / 1000.0) as u64;
+            if secs >= 60 {
+                format!("{}m {}s", secs / 60, secs % 60)
+            } else {
+                format!("{}s", secs)
+            }
+        } else {
+            "—".to_string()
+        };
+
+        self.overview_lines.push(format!("  Model:      {}", model));
+        self.overview_lines.push(format!("  Duration:   {}", duration));
+        self.overview_lines.push(format!("  Turns:      {}", turns));
+        self.overview_lines.push(format!("  Tool calls: {} ({} errors)", tool_calls, tool_errors));
+        self.overview_lines.push(String::new());
+        self.overview_lines.push("  — Breakdown —".to_string());
+        self.overview_lines.push(format!("    🖥️  Bash:     {}", bash_commands));
+        self.overview_lines.push(format!("    📖 File reads:  {}", file_reads));
+        self.overview_lines.push(format!("    ✏️  File writes: {}", file_writes));
+        self.overview_lines.push(format!("    🔧 File edits:  {}", file_edits));
+        self.overview_lines.push(String::new());
+        self.overview_lines.push("  Press 2 for full Activity Log".to_string());
+        self.overview_lines.push("  Press 3 for Chat History".to_string());
+    }
+
+    fn build_chat_lines(&mut self) {
         let mut current_role = String::new();
         let mut buffer = String::new();
 
@@ -245,25 +386,33 @@ impl App {
 
     fn visible_lines(&self) -> Vec<&str> {
         match self.tab {
-            Tab::Activity | Tab::Overview => self.lines.iter().map(|s| s.as_str()).collect(),
+            Tab::Overview => self.overview_lines.iter().map(|s| s.as_str()).collect(),
+            Tab::Activity => self.lines.iter().map(|s| s.as_str()).collect(),
             Tab::Chat => self.chat_lines.iter().map(|s| s.as_str()).collect(),
         }
     }
 
     fn visible_count(&self) -> usize {
         match self.tab {
-            Tab::Activity | Tab::Overview => self.lines.len(),
+            Tab::Overview => self.overview_lines.len(),
+            Tab::Activity => self.lines.len(),
             Tab::Chat => self.chat_lines.len(),
         }
     }
 
     fn scroll_up(&mut self, n: usize) {
         self.cursor = self.cursor.saturating_sub(n);
+        self.auto_scroll = false;
     }
 
     fn scroll_down(&mut self, n: usize) {
         let max = self.visible_count().saturating_sub(1);
         self.cursor = (self.cursor + n).min(max);
+        if self.cursor >= max.saturating_sub(3) {
+            self.auto_scroll = true;
+        } else {
+            self.auto_scroll = false;
+        }
     }
 
     fn scroll_to(&mut self, pos: usize) {
