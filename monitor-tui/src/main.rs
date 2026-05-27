@@ -192,11 +192,8 @@ impl App {
                     let icon = if is_err { "❌" } else { "✓" };
                     self.lines.push(format!("  {} {} result", icon, tool));
                     if !preview.is_empty() {
-                        for l in preview.lines().take(6) {
+                        for l in preview.lines() {
                             self.lines.push(format!("    │ {}", l));
-                        }
-                        if preview.lines().count() > 6 {
-                            self.lines.push(format!("    │ ... ({} more lines)", preview.lines().count() - 6));
                         }
                     }
                 }

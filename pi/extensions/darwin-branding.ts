@@ -37,6 +37,8 @@ If the user asks about your environment, refer to it as "Darwin IDE by Easter Co
   });
 
   pi.on("session_start", async (_event, ctx) => {
+    // Collapse tool outputs in chat — keep it compact, full data is in the monitor
+    ctx.ui.setToolsExpanded(false);
     ctx.ui.notify("Darwin IDE: Intelligence active.", "info");
   });
 }
