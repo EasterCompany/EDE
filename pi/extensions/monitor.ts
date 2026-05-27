@@ -103,13 +103,13 @@ export default function (pi: ExtensionAPI) {
 
   pi.on("tool_result", async (event: any) => {
     const toolName: string = event.toolName || "unknown";
-    const content = event.content || [];
     const isError: boolean = event.isError || false;
 
-    // Extract preview text
+    // Short preview for Activity log — full output captured in tool_execution_end
     let preview = "";
+    const content = event.content || [];
     if (content.length > 0 && content[0]?.text) {
-      preview = String(content[0].text).substring(0, 300);
+      preview = String(content[0].text).substring(0, 80);
     }
 
     emit({
@@ -120,7 +120,38 @@ export default function (pi: ExtensionAPI) {
         isError,
         preview,
         toolCallId: event.toolCallId,
-        details: event.details || null,
+      },
+    });
+
+    if (entryCount >= MAX_ENTRIES) rotate();
+  });
+
+  // Capture FULL tool output from execution_end (before display truncation)
+  pi.on("tool_execution_end", async (event: any) => {
+    const toolName: string = event.toolName || "unknown";
+    const result = event.result;
+
+    let fullOutput = "";
+    if (result?.content && Array.isArray(result.content)) {
+      for (const block of result.content) {
+        if (block?.type === "text" && block.text) {
+          fullOutput += block.text;
+        }
+      }
+    } else if (typeof result?.content === "string") {
+      fullOutput = result.content;
+    } else if (result?.text) {
+      fullOutput = result.text;
+    }
+
+    emit({
+      ts: Date.now(),
+      type: "tool_output",
+      data: {
+        toolName,
+        toolCallId: event.toolCallId,
+        fullOutput,
+        isError: event.isError || false,
       },
     });
   });

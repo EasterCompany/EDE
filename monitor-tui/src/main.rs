@@ -29,7 +29,7 @@ use std::fs;
 use std::io::{self, stdout, Write};
 use std::process::Command;
 
-const MONITOR_FILE: &str = "/tmp/darwin-monitor.jsonl";
+const MONITOR_FILE: &str = "/root/.pi/agent/activity.jsonl";
 
 // ── ANSI escape stripping ─────────────────────────────────────
 
@@ -205,6 +205,19 @@ impl App {
                 "model" => {
                     let m = entry.data["model"].as_str().unwrap_or("?");
                     self.lines.push(format!("  🔄 Model → {}", m));
+                }
+                "tool_output" => {
+                    let tool = entry.data["toolName"].as_str().unwrap_or("?");
+                    let output = strip_ansi(entry.data["fullOutput"].as_str().unwrap_or(""));
+                    if !output.is_empty() {
+                        self.lines.push(format!("  ┌─ {} full output ─┐", tool));
+                        for l in output.lines() {
+                            for wl in wrap_text(l, 120) {
+                                self.lines.push(format!("  │ {}", wl));
+                            }
+                        }
+                        self.lines.push("  └".to_string());
+                    }
                 }
                 _ => {}
             }

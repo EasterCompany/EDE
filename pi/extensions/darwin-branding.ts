@@ -41,4 +41,34 @@ If the user asks about your environment, refer to it as "Darwin IDE by Easter Co
     ctx.ui.setToolsExpanded(false);
     ctx.ui.notify("Darwin IDE: Intelligence active.", "info");
   });
+
+  // ── Compact tool display in chat ─────────────────────────────
+  // Show only command + status, full output goes to monitor
+  pi.on("tool_result", async (event) => {
+    const toolName = event.toolName;
+    const isError = event.isError;
+    const icon = isError ? "❌" : "✓";
+    const code = event.details?.exitCode;
+    const status = code !== undefined ? ` (exit ${code})` : "";
+
+    // Bash: just the exit code
+    if (toolName === "bash") {
+      return {
+        content: [{ type: "text", text: `${icon} bash${status}` }],
+      };
+    }
+
+    // Read/write/edit: just the filename
+    if (toolName === "read" || toolName === "write" || toolName === "edit") {
+      const path = (event.input as any)?.path || "?";
+      return {
+        content: [{ type: "text", text: `${icon} ${toolName} \`${path}\`` }],
+      };
+    }
+
+    // Other tools: just success/fail
+    return {
+      content: [{ type: "text", text: `${icon} ${toolName}` }],
+    };
+  });
 }
