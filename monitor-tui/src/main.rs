@@ -202,17 +202,6 @@ impl App {
                     let ts = format_ts(entry.ts);
                     self.lines.push(format!("{} 💬 User: {}", ts, truncate(text, 120)));
                 }
-                "turn" => {
-                    let ev = entry.data["event"].as_str().unwrap_or("");
-                    if ev == "start" {
-                        let idx = entry.data["turnIndex"].as_u64().unwrap_or(0);
-                        self.lines.push(format!("{} ══ Turn {} ══", "─".repeat(30), idx));
-                    }
-                }
-                "agent" => {
-                    let ev = entry.data["event"].as_str().unwrap_or("");
-                    self.lines.push(format!("  🟢 Agent {}", ev));
-                }
                 "model" => {
                     let m = entry.data["model"].as_str().unwrap_or("?");
                     self.lines.push(format!("  🔄 Model → {}", m));
