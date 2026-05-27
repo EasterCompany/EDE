@@ -43,7 +43,7 @@ export default function (pi: ExtensionAPI) {
     // Quit/close commands would kill pi's own terminal → don't forward
     const dangerous = /^(q|w?qa?|x|exi|clo|quit|exit)(!|\s|$)/i;
     if (dangerous.test(nvimCmd)) {
-      ctx.ui.notify("Quit/close commands must be typed in Neovim directly (Ctrl+W then :q)", "warn");
+      ctx.ui.notify("Quit/close commands must be typed in Neovim directly (Ctrl+L then :q)", "warn");
       return { action: "handled" };
     }
 
