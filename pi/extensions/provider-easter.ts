@@ -8,15 +8,6 @@ export default function (pi: ExtensionAPI) {
     api: "openai-completions",
     models: [
       {
-        id: "darwin-cloud-auto",
-        name: "Darwin Cloud Auto",
-        reasoning: true,
-        input: ["text"],
-        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-        contextWindow: 1000000,
-        maxTokens: 16384
-      },
-      {
         id: "darwin-local-auto",
         name: "Darwin Local Auto",
         reasoning: true,
