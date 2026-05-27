@@ -97,7 +97,7 @@ async function searchStackOverflow(query: string, maxResults: number): Promise<S
   const params = new URLSearchParams({
     order: "desc",
     sort: "relevance",
-    q: query,
+    intitle: query,
     site: "stackoverflow",
     pagesize: String(maxResults),
   });
@@ -242,7 +242,7 @@ export default function (pi: ExtensionAPI) {
     ],
     parameters: Type.Object({
       query: Type.String({
-        description: "Search query. Include the programming language/library as keywords for best results.",
+        description: "Search query. Include the programming language/library as keywords for best results. Keep queries focused — use 1-3 key terms for best results.",
       }),
       maxResults: Type.Optional(
         Type.Number({ description: "Maximum results (default: 5, max: 10)." })
