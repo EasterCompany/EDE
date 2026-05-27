@@ -40,15 +40,28 @@ export default async function (pi: ExtensionAPI) {
         }
       } catch {}
 
-      // Build prompt from messages
+      // Build prompt: system context via @file, conversation as text
+      let systemText = "";
       const parts: string[] = [];
       for (const m of messages) {
         const content = typeof m.content === "string" ? m.content : "";
-        if (m.role === "system" || m.role === "developer") parts.push(content);
-        else if (m.role === "user") parts.push(content);
-        else if (m.role === "assistant") parts.push("[Assistant]\n" + content);
+        if (m.role === "system" || m.role === "developer") {
+          systemText += content + "\n\n";
+          continue;
+        }
+        if (m.role === "user") parts.push(content);
+        else if (m.role === "assistant") parts.push(content);
       }
-      const prompt = parts.join("\n\n") || "hi";
+
+      // Write system context to fixed file — gemini loads via @path syntax,
+      // and should deduplicate when the same file is referenced across turns
+      const ctxFile = "/tmp/darwin-gemini-system.md";
+      try {
+        const fs = require("fs");
+        fs.writeFileSync(ctxFile, systemText);
+      } catch {}
+
+      const prompt = `@${ctxFile}\n\n` + parts.join("\n\n") || "hi";
 
       // Try spawn with cascade on auto
       trySpawn(0);
