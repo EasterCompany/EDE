@@ -67,13 +67,6 @@ export default function (pi: ExtensionAPI) {
     const nvimCmd = raw.slice(1).trim();
     if (!nvimCmd) return { action: "continue" };
 
-    // Quit/close commands would kill pi's own terminal → don't forward
-    const dangerous = /^(q|w?qa?|x|exi|clo|quit|exit)(!|\s|$)/i;
-    if (dangerous.test(nvimCmd)) {
-      ctx.ui.notify("Quit/close commands must be typed in Neovim directly (Ctrl+L then :q)", "warn");
-      return { action: "handled" };
-    }
-
     try {
       const luaCode = [
         'for _, win in ipairs(vim.api.nvim_list_wins()) do',
@@ -119,10 +112,10 @@ export default function (pi: ExtensionAPI) {
       required: ["command"],
     },
     execute: async (_id: string, params: { command: string }) => {
-      // Guard against commands that kill the terminal
-      const dangerous = /^(q|w?qa?|x|exi|clo|quit|exit)(!|\s|$)/i;
-      if (dangerous.test(params.command)) {
-        return { content: [{ type: "text", text: "⚠️ Refusing to execute quit/close command — it would kill this session." }], isError: true };
+      // Guard against mass-quit commands that kill all windows (including terminal)
+      const massQuit = /^(w?qa!?|xa!?)$/i;
+      if (massQuit.test(params.command)) {
+        return { content: [{ type: "text", text: "⚠️ Refusing to execute mass-quit — it would kill this session." }], isError: true };
       }
 
       const luaCode = [
