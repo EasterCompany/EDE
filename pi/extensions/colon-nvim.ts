@@ -27,7 +27,17 @@ function execNvimCmd(cmd: string): { ok: boolean; error?: string } {
       .replace(/\\/g, "\\\\")
       .replace(/"/g, '\\"')
       .replace(/\n/g, "\\n");
-    const luaCode = `vim.cmd("${luaEscaped}")`;
+    // Build Lua: switch to a non-terminal window first, then execute
+    const luaCode = [
+      'for _, win in ipairs(vim.api.nvim_list_wins()) do',
+      '  local buf = vim.api.nvim_win_get_buf(win)',
+      "  if vim.bo[buf].buftype ~= 'terminal' then",
+      '    vim.api.nvim_set_current_win(win)',
+      '    break',
+      '  end',
+      'end',
+      `vim.cmd("${luaEscaped}")`,
+    ].join('\n');
     writeFileSync(tmpFile, luaCode);
 
     execSync(
