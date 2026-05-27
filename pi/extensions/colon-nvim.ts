@@ -7,7 +7,7 @@
  * 3. slash_command tool — Darwin can execute pi commands (/reload, /compact, etc.)
  */
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { execSync } from "child_process";
+import { execSync, exec } from "child_process";
 import { writeFileSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -31,6 +31,33 @@ function execNvimLua(luaCode: string): { ok: boolean; result?: string; error?: s
   }
 }
 
+function execNvimLuaAsync(luaCode: string): Promise<{ ok: boolean; result?: string; error?: string }> {
+  const server = process.env.NVIM;
+  if (!server) return Promise.resolve({ ok: false, error: "No Neovim server ($NVIM)" });
+
+  const tmpFile = join(tmpdir(), `nvim-lua-${Date.now()}.lua`);
+  return new Promise((resolve) => {
+    try {
+      writeFileSync(tmpFile, luaCode);
+      exec(
+        `nvim --server '${server}' --remote-expr "execute('luafile ${tmpFile}')"`,
+        { timeout: 5000 },
+        (err, stdout) => {
+          try { unlinkSync(tmpFile); } catch {}
+          if (err) {
+            resolve({ ok: false, error: err.message });
+          } else {
+            resolve({ ok: true, result: (stdout || "").trim() });
+          }
+        },
+      );
+    } catch (err: any) {
+      try { unlinkSync(tmpFile); } catch {}
+      resolve({ ok: false, error: err?.message || String(err) });
+    }
+  });
+}
+
 export default function (pi: ExtensionAPI) {
   // ── :command passthrough (user types colon commands in pi chat) ──
   pi.on("input", async (event, ctx) => {
@@ -48,11 +75,14 @@ export default function (pi: ExtensionAPI) {
     }
 
     try {
-      execSync(
-        `nvim --server '${process.env.NVIM}' --remote-expr "execute('luafile /dev/stdin')" 2>/dev/null`,
-        { timeout: 3000, input: `vim.cmd("${nvimCmd.replace(/"/g, '\\"')}")` },
-      );
-      ctx.ui.notify(`Neovim: :${nvimCmd}`, "info");
+      const luaCode = `vim.cmd("${nvimCmd.replace(/"/g, '\\"')}")`;
+      execNvimLuaAsync(luaCode).then((r) => {
+        if (r.ok) {
+          ctx.ui.notify(`Neovim: :${nvimCmd}`, "info");
+        } else {
+          ctx.ui.notify(`Neovim: ${r.error || "failed"}`, "error");
+        }
+      });
     } catch {
       ctx.ui.notify("Failed to execute Neovim command", "error");
       return { action: "continue" };
