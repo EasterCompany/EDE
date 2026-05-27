@@ -40,6 +40,13 @@ export default function (pi: ExtensionAPI) {
     const nvimCmd = raw.slice(1).trim();
     if (!nvimCmd) return { action: "continue" };
 
+    // Quit/close commands would kill pi's own terminal → don't forward
+    const dangerous = /^(q|w?qa?|x|exi|clo|quit|exit)(!|\s|$)/i;
+    if (dangerous.test(nvimCmd)) {
+      ctx.ui.notify("Quit/close commands must be typed in Neovim directly (Ctrl+W then :q)", "warn");
+      return { action: "handled" };
+    }
+
     try {
       execSync(
         `nvim --server '${process.env.NVIM}' --remote-expr "execute('luafile /dev/stdin')" 2>/dev/null`,
@@ -72,6 +79,12 @@ export default function (pi: ExtensionAPI) {
       required: ["command"],
     },
     execute: async (_id: string, params: { command: string }) => {
+      // Guard against commands that kill the terminal
+      const dangerous = /^(q|w?qa?|x|exi|clo|quit|exit)(!|\s|$)/i;
+      if (dangerous.test(params.command)) {
+        return { content: [{ type: "text", text: "⚠️ Refusing to execute quit/close command — it would kill this session." }], isError: true };
+      }
+
       const luaCode = [
         'for _, win in ipairs(vim.api.nvim_list_wins()) do',
         '  local buf = vim.api.nvim_win_get_buf(win)',
