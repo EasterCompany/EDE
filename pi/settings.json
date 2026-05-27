@@ -21,6 +21,7 @@
     "/root/.pi/agent/extensions/provider-easter.ts",
     "/root/.pi/agent/extensions/provider-gemini.ts",
     "/root/.pi/agent/extensions/etl.ts",
-    "/root/.pi/agent/extensions/footer-quota.ts"
+    "/root/.pi/agent/extensions/footer-quota.ts",
+    "/root/.pi/agent/extensions/web-search.ts"
   ]
 }
