@@ -228,6 +228,7 @@ function install_dependency() {
 
   if [ "$cmd" = "pi" ]; then
     if command -v npm &>/dev/null; then
+      $SUDO_CMD npm install -g @earendil-works/pi-coding-agent 2>/dev/null || \
       $SUDO_CMD npm install -g @mariozechner/pi-coding-agent
     else
       draw_centered "${RED}❌ Error: 'pi' is missing and 'npm' is not found. Please install manually.${RESET}"
@@ -370,14 +371,31 @@ mkdir -p "$PI_AGENT_DIR/packages"
 cp -r "$EDE_DIR/pi-annotate" "$PI_AGENT_DIR/packages/pi-annotate"
 (cd "$PI_AGENT_DIR/packages/pi-annotate" && npm install --omit=dev) >/dev/null 2>&1
 
+# Helper: install binary with sudo fallback to ~/.local/bin
+function install_binary() {
+  local src="$1"
+  local name="$2"
+  local dest="/usr/local/bin/$name"
+
+  if command -v sudo &>/dev/null && [ "$EUID" -ne 0 ]; then
+    if sudo cp "$src" "$dest" 2>/dev/null && sudo chmod +x "$dest" 2>/dev/null; then
+      return 0
+    fi
+  fi
+  if cp "$src" "$dest" 2>/dev/null && chmod +x "$dest" 2>/dev/null; then
+    return 0
+  fi
+  mkdir -p "$HOME/.local/bin"
+  cp "$src" "$HOME/.local/bin/$name" && chmod +x "$HOME/.local/bin/$name"
+}
+
 # Darwin Context TUI
 draw_centered "${CYAN}🔧 Building Darwin Context Inspector...${RESET}"
 if command -v cargo &>/dev/null; then
   (cd "$EDE_DIR/context-tui" && cargo build --release) >/dev/null 2>&1 && \
-    cp "$EDE_DIR/context-tui/target/release/darwin-context" /usr/local/bin/darwin-context 2>/dev/null && \
-    chmod +x /usr/local/bin/darwin-context 2>/dev/null && \
+    install_binary "$EDE_DIR/context-tui/target/release/darwin-context" darwin-context && \
     draw_centered "${GREEN}✅ Darwin Context Inspector installed.${RESET}" || \
-    draw_centered "${ORANGE}⚠️ Context TUI build skipped (check cargo).${RESET}"
+    draw_centered "${ORANGE}⚠️ Context TUI build/install failed.${RESET}"
 else
   draw_centered "${ORANGE}⚠️ cargo not found — skipping context TUI build.${RESET}"
 fi
@@ -386,10 +404,9 @@ fi
 draw_centered "${CYAN}🔧 Building Darwin Agent Monitor...${RESET}"
 if command -v cargo &>/dev/null; then
   (cd "$EDE_DIR/monitor-tui" && cargo build --release) >/dev/null 2>&1 && \
-    cp "$EDE_DIR/monitor-tui/target/release/darwin-monitor" /usr/local/bin/darwin-monitor 2>/dev/null && \
-    chmod +x /usr/local/bin/darwin-monitor 2>/dev/null && \
+    install_binary "$EDE_DIR/monitor-tui/target/release/darwin-monitor" darwin-monitor && \
     draw_centered "${GREEN}✅ Darwin Agent Monitor installed.${RESET}" || \
-    draw_centered "${ORANGE}⚠️ Monitor TUI build skipped (check cargo).${RESET}"
+    draw_centered "${ORANGE}⚠️ Monitor TUI build/install failed.${RESET}"
 else
   draw_centered "${ORANGE}⚠️ cargo not found — skipping monitor TUI build.${RESET}"
 fi
@@ -444,9 +461,13 @@ draw_centered "$SUMMARY"
 [ -n "$FFPLAY_PID" ] && kill $FFPLAY_PID 2>/dev/null
 
 # Login with EID
-/root/.config/nvim/scripts/darwin-auth.sh
+"$HOME/.config/nvim/scripts/darwin-auth.sh"
 
 # Launch Darwin IDE
 [ -n "$FFPLAY_PID" ] && kill $FFPLAY_PID 2>/dev/null
+# Ensure ~/.local/bin is on PATH before launching
+if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+  export PATH="$HOME/.local/bin:$PATH"
+fi
 cd "$HOME"
 exec nvim
