@@ -1,30 +1,55 @@
 /**
- * Darwin IDE — Neovim command passthrough from pi agent interface.
+ * Darwin IDE — Neovim command integration from pi agent interface.
  *
- * Typing a colon-prefixed command (`:w`, `:wqa`, `:q!`, `:e file.txt`, etc.)
- * in the pi chat input forwards it directly to the host Neovim instance
- * instead of sending it to the LLM.
+ * Two features:
+ * 1. Colon passthrough — user types `:wqa` in pi chat → forwarded to Neovim via RPC
+ * 2. nvim_command tool — Darwin can call it to control the editor
  *
- * Works by reading $NVIM (Neovim server socket set by termopen) and
- * using `nvim --remote-send` to inject keystrokes.
+ * Uses nvim_exec_lua via --remote-expr for reliable execution (no keystroke simulation).
  */
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { execSync } from "child_process";
+import { writeFileSync, unlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+function execNvimCmd(cmd: string): { ok: boolean; error?: string } {
+  const server = process.env.NVIM;
+  if (!server) {
+    return { ok: false, error: "No Neovim server socket ($NVIM)" };
+  }
+
+  // Write command to temp file to avoid all shell/Vim quoting issues
+  const tmpFile = join(tmpdir(), `nvim-cmd-${Date.now()}.lua`);
+  try {
+    // Escape for Lua string
+    const luaEscaped = cmd
+      .replace(/\\/g, "\\\\")
+      .replace(/"/g, '\\"')
+      .replace(/\n/g, "\\n");
+    const luaCode = `vim.cmd("${luaEscaped}")`;
+    writeFileSync(tmpFile, luaCode);
+
+    execSync(
+      `nvim --server '${server}' --remote-expr "dofile('${tmpFile}')" 2>/dev/null`,
+      { timeout: 3000 },
+    );
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || String(err) };
+  } finally {
+    try { unlinkSync(tmpFile); } catch {}
+  }
+}
 
 export default function (pi: ExtensionAPI) {
   // ── :command passthrough (user types colon commands in pi chat) ──
   pi.on("input", async (event, ctx) => {
     const raw = event.text.trim();
 
-    // Only intercept colon-prefixed commands (not empty, not just ":")
+    // Only intercept colon-prefixed commands
     if (!raw.startsWith(":") || raw === ":") {
       return;
-    }
-
-    const server = process.env.NVIM;
-    if (!server) {
-      ctx.ui.notify("No Neovim server socket ($NVIM) — not running inside Neovim terminal.", "warning");
-      return { action: "continue" };
     }
 
     // Extract the command (everything after ":")
@@ -33,20 +58,14 @@ export default function (pi: ExtensionAPI) {
       return { action: "continue" };
     }
 
-    try {
-      // <C-\><C-N> escapes terminal/insert mode into normal mode,
-      // then we type the colon command followed by Enter.
-      // The colon command naturally enters command-line mode.
-      execSync(
-        `nvim --server "${server}" --remote-send '<C-\\><C-N>:${escapeForVim(nvimCmd)}<CR>'`,
-        { timeout: 3000 },
-      );
+    const result = execNvimCmd(nvimCmd);
+    if (result.ok) {
       ctx.ui.notify(`Neovim: :${nvimCmd}`, "info");
-    } catch (err: any) {
-      ctx.ui.notify(`Neovim command failed: ${err?.message || err}`, "error");
+    } else {
+      ctx.ui.notify(`Failed: ${result.error}`, "error");
+      return { action: "continue" }; // fall through to LLM on failure
     }
 
-    // Always mark as handled — don't send colon commands to the LLM
     return { action: "handled" };
   });
 
@@ -66,44 +85,24 @@ export default function (pi: ExtensionAPI) {
       properties: {
         command: {
           type: "string",
-          description: "The Neovim colon command (without the leading colon), e.g. 'vsp /path/to/file.ts' or 'w' or 'bd'",
+          description:
+            "The Neovim colon command (without the leading colon), e.g. 'vsp /path/to/file.ts' or 'w' or 'bd'",
         },
       },
       required: ["command"],
     },
-    execute: async (toolCallId: string, params: { command: string }) => {
-      const server = process.env.NVIM;
-      if (!server) {
-        return {
-          content: [{ type: "text", text: "Error: No Neovim server socket ($NVIM) — not running inside Neovim terminal." }],
-          isError: true,
-        };
-      }
-
-      try {
-        const escaped = params.command.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-        execSync(
-          `nvim --server "${server}" --remote-send '<C-\\><C-N>:${escaped}<CR>'`,
-          { timeout: 3000 },
-        );
+    execute: async (_toolCallId: string, params: { command: string }) => {
+      const result = execNvimCmd(params.command);
+      if (result.ok) {
         return {
           content: [{ type: "text", text: `Executed Neovim command: :${params.command}` }],
           isError: false,
         };
-      } catch (err: any) {
-        return {
-          content: [{ type: "text", text: `Neovim command failed: ${err?.message || err}` }],
-          isError: true,
-        };
       }
+      return {
+        content: [{ type: "text", text: `Neovim command failed: ${result.error}` }],
+        isError: true,
+      };
     },
   });
-}
-
-/**
- * Escape characters that would break the Vim command string.
- * Surrounds the entire command in quotes and escapes internal quotes.
- */
-function escapeForVim(cmd: string): string {
-  return cmd.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 }
