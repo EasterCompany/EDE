@@ -4,10 +4,11 @@
  * Spawns gemini CLI in headless mode per request, sharing the user's
  * Google AI Pro quota via existing OAuth credentials.
  *
- * Models:
- *   darwin-gemini-auto  → gemini-3.1-pro-preview
+ * Models (cascade for auto):
+ *   darwin-gemini-auto  → pro → flash → flash-lite
  *   darwin-gemini-pro   → gemini-3.1-pro-preview
  *   darwin-gemini-flash → gemini-3-flash-preview
+ *   darwin-gemini-lite  → gemini-3.1-flash-lite-preview
  */
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { spawn } from "child_process";
@@ -20,12 +21,22 @@ export default async function (pi: ExtensionAPI) {
     req.on("end", () => {
       let body = Buffer.concat(chunks);
       let model = "gemini-3.1-pro-preview";
-      let messages: any[] = [];
+      let cascade: string[] = [];
 
       try {
         const parsed = JSON.parse(body.toString());
         messages = parsed.messages || [];
-        if (parsed.model?.includes("gemini-flash")) model = "gemini-3-flash-preview";
+        if (parsed.model?.includes("gemini-pro")) {
+          model = "gemini-3.1-pro-preview";
+        } else if (parsed.model?.includes("gemini-flash")) {
+          model = "gemini-3-flash-preview";
+        } else if (parsed.model?.includes("gemini-lite")) {
+          model = "gemini-3.1-flash-lite-preview";
+        } else {
+          // auto: cascade pro → flash → lite
+          cascade = ["gemini-3.1-pro-preview", "gemini-3-flash-preview", "gemini-3.1-flash-lite-preview"];
+          model = cascade[0];
+        }
       } catch {}
 
       // Build prompt from messages
@@ -38,53 +49,69 @@ export default async function (pi: ExtensionAPI) {
       }
       const prompt = parts.join("\n\n") || "hi";
 
-      const child = spawn("gemini", ["--model", model, "-p", prompt, "-o", "json", "-y"], {
-        env: { ...process.env, HOME: process.env.HOME || "/root" },
-        timeout: 120000,
-      });
+      // Try spawn with cascade on auto
+      trySpawn(0);
 
-      let stdout = "";
-      let stderr = "";
-      child.stdout.on("data", (d: Buffer) => stdout += d.toString());
-      child.stderr.on("data", (d: Buffer) => stderr += d.toString());
+      function trySpawn(cascadeIdx: number) {
+        const currentModel = cascadeIdx > 0 && cascade.length > 0 ? cascade[cascadeIdx] : model;
 
-      child.on("close", (code) => {
-        if (code !== 0 || !stdout.trim()) {
+        const child = spawn("gemini", ["--model", currentModel, "-p", prompt, "-o", "json", "-y"], {
+          env: { ...process.env, HOME: process.env.HOME || "/root" },
+          timeout: 120000,
+        });
+
+        let stdout = "";
+        let stderr = "";
+        child.stdout.on("data", (d: Buffer) => stdout += d.toString());
+        child.stderr.on("data", (d: Buffer) => stderr += d.toString());
+
+        child.on("close", (code) => {
+          if (code !== 0 || !stdout.trim()) {
+            // Cascade: try next model
+            if (cascade.length > 0 && cascadeIdx + 1 < cascade.length) {
+              trySpawn(cascadeIdx + 1);
+              return;
+            }
+            if (!clientRes.headersSent) {
+              clientRes.writeHead(502);
+              clientRes.end(JSON.stringify({ error: `gemini ${currentModel} exit ${code}` }));
+            }
+            return;
+          }
+          try {
+            const r = JSON.parse(stdout);
+            const text = r?.response || r?.result || r?.text || stdout;
+            const openai = {
+              id: "gemini-" + Date.now(),
+              object: "chat.completion",
+              created: Math.floor(Date.now() / 1000),
+              model: currentModel,
+              choices: [{ index: 0, message: { role: "assistant", content: typeof text === "string" ? text : JSON.stringify(text) }, finish_reason: "stop" }],
+              usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+            };
+            if (!clientRes.headersSent) {
+              clientRes.writeHead(200, { "Content-Type": "application/json" });
+              clientRes.end(JSON.stringify(openai));
+            }
+          } catch (e: any) {
+            if (!clientRes.headersSent) {
+              clientRes.writeHead(502);
+              clientRes.end(JSON.stringify({ error: e.message }));
+            }
+          }
+        });
+
+        child.on("error", (err) => {
+          if (cascade.length > 0 && cascadeIdx + 1 < cascade.length) {
+            trySpawn(cascadeIdx + 1);
+            return;
+          }
           if (!clientRes.headersSent) {
             clientRes.writeHead(502);
-            clientRes.end(JSON.stringify({ error: `gemini CLI exit ${code}: ${stderr.slice(0, 200)}` }));
+            clientRes.end(JSON.stringify({ error: err.message }));
           }
-          return;
-        }
-        try {
-          const r = JSON.parse(stdout);
-          const text = r?.response || r?.result || r?.text || stdout;
-          const openai = {
-            id: "gemini-" + Date.now(),
-            object: "chat.completion",
-            created: Math.floor(Date.now() / 1000),
-            model,
-            choices: [{ index: 0, message: { role: "assistant", content: typeof text === "string" ? text : JSON.stringify(text) }, finish_reason: "stop" }],
-            usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-          };
-          if (!clientRes.headersSent) {
-            clientRes.writeHead(200, { "Content-Type": "application/json" });
-            clientRes.end(JSON.stringify(openai));
-          }
-        } catch (e: any) {
-          if (!clientRes.headersSent) {
-            clientRes.writeHead(502);
-            clientRes.end(JSON.stringify({ error: `Parse failed: ${e.message}`, raw: stdout.slice(0, 500) }));
-          }
-        }
-      });
-
-      child.on("error", (err) => {
-        if (!clientRes.headersSent) {
-          clientRes.writeHead(502);
-          clientRes.end(JSON.stringify({ error: err.message }));
-        }
-      });
+        });
+      }
     });
   });
 
@@ -126,6 +153,15 @@ export default async function (pi: ExtensionAPI) {
       {
         id: "darwin-gemini-flash",
         name: "Darwin Gemini Flash",
+        reasoning: true,
+        input: ["text"],
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+        contextWindow: 1048576,
+        maxTokens: 8192,
+      },
+      {
+        id: "darwin-gemini-lite",
+        name: "Darwin Gemini Lite",
         reasoning: true,
         input: ["text"],
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
