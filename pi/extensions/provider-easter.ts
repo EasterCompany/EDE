@@ -3,13 +3,13 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 export default function (pi: ExtensionAPI) {
   pi.registerProvider("easter-company", {
     baseUrl: "https://easter.company/api/ems/v1",
-    apiKey: "DARWIN_TOKEN",
+    apiKey: process.env.DARWIN_TOKEN || "no-token",
     authHeader: true,
     api: "openai-completions",
     models: [
       {
-        id: "darwin-cloud-lite",
-        name: "Darwin Cloud Lite",
+        id: "darwin-cloud-nano",
+        name: "Darwin Cloud Nano",
         reasoning: false,
         input: ["text"],
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
@@ -35,8 +35,8 @@ export default function (pi: ExtensionAPI) {
         maxTokens: 16384
       },
       {
-        id: "darwin-local-lite",
-        name: "Darwin Local Lite",
+        id: "darwin-local-nano",
+        name: "Darwin Local Nano",
         reasoning: false,
         input: ["text"],
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
@@ -60,33 +60,6 @@ export default function (pi: ExtensionAPI) {
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
         contextWindow: 128000,
         maxTokens: 8192
-      },
-      {
-        id: "gemini-cloud-lite",
-        name: "Gemini Cloud Lite",
-        reasoning: false,
-        input: ["text"],
-        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-        contextWindow: 1000000,
-        maxTokens: 16384
-      },
-      {
-        id: "gemini-cloud-auto",
-        name: "Gemini Cloud Auto",
-        reasoning: true,
-        input: ["text"],
-        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-        contextWindow: 1000000,
-        maxTokens: 16384
-      },
-      {
-        id: "gemini-cloud-pro",
-        name: "Gemini Cloud Pro",
-        reasoning: true,
-        input: ["text"],
-        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-        contextWindow: 1000000,
-        maxTokens: 16384
       }
     ]
   });
