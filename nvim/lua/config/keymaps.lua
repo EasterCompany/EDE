@@ -125,15 +125,47 @@ end, { noremap = true, silent = true, desc = "Lazygit" })
 vim.keymap.set({ "n", "t" }, "<leader>pt", function()
   local ok, etl = pcall(require, "config.etl")
   if ok and etl.toggle then etl.toggle() end
-end, { noremap = true, silent = true, desc = "ETL Todo List" })
+end, { noremap = true, silent = true, desc = "Tasks (ETL)" })
 
--- Global keymap for Pi Agent Monitor
-vim.keymap.set({ "n", "t" }, "<leader>ps", function()
-  local monitor_ok, monitor = pcall(require, "config.monitor")
-  if monitor_ok and monitor.show_monitor_view then
-    monitor.show_monitor_view()
+-- Global keymap for Darwin Agent Monitor (Rust TUI)
+-- Reads /tmp/darwin-monitor.jsonl (produced by the monitor pi extension)
+vim.keymap.set("n", "<leader>ps", function()
+  -- Wipe any existing monitor TUI buffer
+  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    local name = vim.api.nvim_buf_get_name(buf)
+    if name and name:match("darwin%-monitor") then
+      pcall(vim.api.nvim_buf_delete, buf, { force = true })
+    end
   end
-end, { noremap = true, silent = true, desc = "Agent Monitor" })
+
+  local main_win = nil
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    local config = vim.api.nvim_win_get_config(win)
+    if config.relative == "" and vim.api.nvim_win_get_width(win) > (vim.o.columns / 2) then
+      main_win = win
+      break
+    end
+  end
+  if not main_win then main_win = vim.api.nvim_get_current_win() end
+
+  local buf = vim.api.nvim_create_buf(false, true)
+  pcall(vim.api.nvim_buf_set_name, buf, "darwin-monitor://inspector")
+  vim.api.nvim_win_set_buf(main_win, buf)
+  vim.api.nvim_set_current_win(main_win)
+  vim.bo[buf].scrollback = 0
+
+  vim.fn.termopen("darwin-monitor", {
+    on_exit = function()
+      vim.schedule(function()
+        if buf and vim.api.nvim_buf_is_valid(buf) then
+          vim.api.nvim_buf_delete(buf, { force = true })
+        end
+        print("Darwin: Agent monitor closed.")
+      end)
+    end,
+  })
+  vim.cmd("startinsert")
+end, { noremap = true, silent = true, desc = "Monitor (Agent Activity)" })
 
 -- Global keymap for Darwin Context Inspector (Prompt Context)
 -- Launches the darwin-context Rust TUI in a neovim terminal,
@@ -196,7 +228,7 @@ vim.keymap.set("n", "<leader>pc", function()
   })
 
   vim.cmd("startinsert")
-end, { noremap = true, silent = true, desc = "Darwin: Prompt Context Inspector" })
+end, { noremap = true, silent = true, desc = "Context (Prompt Inspector)" })
 
 -- Global keymap for Grug-far (Search & Replace) on the RIGHT
 vim.keymap.set("n", "<leader>sr", function()
