@@ -453,7 +453,7 @@ SUMMARY="
 ${GREEN}======================================================
  Exec: ${RESET}${BOLD}darwin-auth${RESET}${GREEN} to authenticate with EID
  Exec: ${RESET}${BOLD}darwin-annotate${RESET}${GREEN} to setup Pi Annotate
- and access Darwin Cloud services via Darwin IDE
+ Exec: ${RESET}${BOLD}darwin${RESET}${GREEN} to start Darwin-IDE
 ======================================================${RESET}
 "
 draw_centered "$SUMMARY"
