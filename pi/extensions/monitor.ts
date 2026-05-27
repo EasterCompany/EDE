@@ -1,97 +1,219 @@
-import type { ExtensionAPI, ToolCall } from "@mariozechner/pi-coding-agent";
-import { writeFileSync, readFileSync } from "node:fs";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
+/**
+ * Darwin Agent Monitor — captures all agent activity to a JSONL file
+ * consumed by the darwin-monitor Rust TUI (<leader>ps).
+ */
+import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
+import { appendFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { dirname } from "node:path";
+
+const MONITOR_FILE = "/tmp/darwin-monitor.jsonl";
+
+interface MonitorEntry {
+  ts: number;                 // epoch ms
+  type: "tool_call" | "tool_result" | "message" | "turn" | "input" | "agent" | "model" | "error";
+  data: Record<string, unknown>;
+}
+
+let entryCount = 0;
+const MAX_ENTRIES = 5000;
+
+function emit(entry: MonitorEntry): void {
+  if (entryCount >= MAX_ENTRIES) return; // safety valve
+  entryCount++;
+  try {
+    const line = JSON.stringify(entry) + "\n";
+    if (entryCount === 1) {
+      writeFileSync(MONITOR_FILE, line);
+    } else {
+      appendFileSync(MONITOR_FILE, line);
+    }
+  } catch {}
+}
+
+// Truncate file on session start
+function reset(): void {
+  entryCount = 0;
+  try { writeFileSync(MONITOR_FILE, ""); } catch {}
+}
 
 export default function (pi: ExtensionAPI) {
-  const syncFile = "/tmp/darwin-monitor.md";
-  const sessionBuffer: string[] = [];
-  const sessionId = "sess_" + Date.now().toString(36);
+  // Ensure dir exists
+  try { mkdirSync(dirname(MONITOR_FILE), { recursive: true }); } catch {}
 
-  const EMS_CANDIDATES = [
-      "https://easter.company/api/ems/memory/episodic",
-      "http://100.100.1.1:8080/api/ems/memory/episodic",
-      "http://localhost:8080/api/ems/memory/episodic",
-  ];
+  reset();
 
-  async function pushToEpisodicMemory(summary: string) {
-      const body = JSON.stringify({ session_id: sessionId, summary });
-      for (const url of EMS_CANDIDATES) {
-          try {
-              const resp = await fetch(url, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body,
-                  signal: AbortSignal.timeout(3000),
-              });
-              if (resp.ok) return;
-          } catch {}
-      }
-  }
-
-  pi.on("tool_call", async (event) => {
-    if (event.name === "edit") {
-        const input = event.arguments as { path: string, edits: { oldText: string, newText: string }[] };
-        let content = `# Darwin Agent: Performing Edit\n\n`;
-        content += `File: \`${input.path}\`\n\n`;
-        
-        try {
-            const currentFileContent = readFileSync(input.path, "utf-8");
-            content += "## Current File State\n\n```" + (input.path.endsWith('.md') ? 'markdown' : input.path.split('.').pop()) + "\n" + currentFileContent + "\n```\n\n";
-            
-            content += "## Proposed Changes\n\n";
-            for (const edit of input.edits) {
-                content += "### Edit Block\n\n```diff\n";
-                if (edit.oldText) {
-                    content += edit.oldText.split('\n').map(l => `- ${l}`).join('\n') + "\n";
-                }
-                if (edit.newText) {
-                    content += edit.newText.split('\n').map(l => `+ ${l}`).join('\n') + "\n";
-                }
-                content += "```\n\n";
-            }
-        } catch (e) {
-            content += "*(Could not read file for preview)*";
-        }
-        
-        writeFileSync(syncFile, content);
-        sessionBuffer.push(`Intended to edit ${input.path}`);
-    }
+  // ── Agent lifecycle ──────────────────────────────────────────
+  pi.on("agent_start", async (_event: any) => {
+    emit({ ts: Date.now(), type: "agent", data: { event: "start" } });
   });
 
-  pi.on("tool_result", async (event) => {
-    if (event.isError) {
-        writeFileSync(syncFile, "# ❌ Error executing tool\n\n```json\n" + JSON.stringify(event.content, null, 2) + "\n```");
-        sessionBuffer.push(`Error in ${event.toolName}: ${JSON.stringify(event.content)}`);
+  pi.on("agent_end", async (_event: any) => {
+    emit({ ts: Date.now(), type: "agent", data: { event: "end" } });
+  });
+
+  pi.on("turn_start", async (event: any) => {
+    emit({ ts: Date.now(), type: "turn", data: { event: "start", turnIndex: event.turnIndex } });
+  });
+
+  pi.on("turn_end", async (event: any) => {
+    emit({ ts: Date.now(), type: "turn", data: { event: "end", turnIndex: event.turnIndex } });
+  });
+
+  // ── User input ───────────────────────────────────────────────
+  pi.on("input", async (event: any) => {
+    emit({
+      ts: Date.now(),
+      type: "input",
+      data: { text: event.text, source: event.source },
+    });
+  });
+
+  // ── Tool calls (everything the agent does) ───────────────────
+  pi.on("tool_call", async (event: any) => {
+    const toolName: string = event.toolName || "unknown";
+    const args = event.input || {};
+
+    // Summarise args for display (keep it compact)
+    let summary = "";
+    if (toolName === "bash") {
+      summary = (args.command as string || "").substring(0, 200);
+    } else if (toolName === "read") {
+      summary = `📖 ${args.path || "?"}`;
+    } else if (toolName === "write") {
+      summary = `✏️ ${args.path || "?"}`;
+    } else if (toolName === "edit") {
+      const edits = (args.edits as any[]) || [];
+      summary = `🔧 ${args.path || "?"} (${edits.length} edit${edits.length !== 1 ? "s" : ""})`;
+    } else if (toolName === "search" || toolName === "grep") {
+      summary = `🔍 ${args.pattern || "?"}`;
+    } else if (toolName === "find") {
+      summary = `🔎 ${args.pattern || "?"}`;
+    } else if (toolName === "ls") {
+      summary = `📂 ${args.path || "."}`;
     } else {
-        let content = `# ✨ Last Action: \`${event.toolName}\`\n\n`;
-        const input = event.input as any;
-        
-        if (event.toolName === "read") {
-            content += `**File:** \`${input.path}\`\n\n\`\`\`${input.path.split('.').pop()}\n${event.content?.[0]?.text}\n\`\`\``;
-            sessionBuffer.push(`Read file ${input.path}`);
-        } else if (event.toolName === "bash") {
-            content += "### Command executed\n\n```bash\n" + input.command + "\n```\n\n### Output\n\n```text\n" + event.content?.[0]?.text + "\n```";
-            sessionBuffer.push(`Ran bash command: ${input.command}`);
-        } else if (event.toolName === "edit") {
-            content += `### Edit Complete on \`${input.path}\`\n\n`;
-            sessionBuffer.push(`Successfully edited ${input.path}`);
-        } else if (event.toolName === "write") {
-            content += `### Created/Updated File: \`${input.path}\`\n\n\`\`\`${input.path.split('.').pop()}\n${input.content}\n\`\`\``;
-            sessionBuffer.push(`Wrote file ${input.path}`);
-        } else {
-            content += "*(Tool executed successfully)*";
-            sessionBuffer.push(`Used tool ${event.toolName}`);
-        }
-        
-        writeFileSync(syncFile, content);
+      summary = `${toolName}`;
     }
 
-    // Every 5 actions, flush to episodic memory
-    if (sessionBuffer.length >= 5) {
-        const summary = "Recent actions:\n- " + sessionBuffer.join("\n- ");
-        await pushToEpisodicMemory(summary);
-        sessionBuffer.length = 0; // clear
+    emit({
+      ts: Date.now(),
+      type: "tool_call",
+      data: { toolName, args, summary, toolCallId: event.toolCallId },
+    });
+  });
+
+  pi.on("tool_result", async (event: any) => {
+    const toolName: string = event.toolName || "unknown";
+    const content = event.content || [];
+    const isError: boolean = event.isError || false;
+
+    // Extract preview text
+    let preview = "";
+    if (content.length > 0 && content[0]?.text) {
+      preview = String(content[0].text).substring(0, 300);
     }
+
+    emit({
+      ts: Date.now(),
+      type: "tool_result",
+      data: {
+        toolName,
+        isError,
+        preview,
+        toolCallId: event.toolCallId,
+        details: event.details || null,
+      },
+    });
+  });
+
+  // ── Messages (chat — user prompts, assistant thinking, assistant response) ──
+  pi.on("message_start", async (event: any) => {
+    const msg = event.message;
+    const role = msg?.role || "unknown";
+
+    emit({
+      ts: Date.now(),
+      type: "message",
+      data: {
+        event: "start",
+        role,
+        messageId: msg?.id,
+      },
+    });
+  });
+
+  pi.on("message_update", async (event: any) => {
+    const msg = event.message;
+    const role = msg?.role || "unknown";
+    const evt = event.assistantMessageEvent;
+
+    // Extract text delta from streaming event
+    let text = "";
+    if (evt?.type === "content_block_delta" && evt?.delta?.text) {
+      text = evt.delta.text;
+    } else if (evt?.type === "content_block_start") {
+      text = "[block start]";
+    }
+
+    emit({
+      ts: Date.now(),
+      type: "message",
+      data: {
+        event: "update",
+        role,
+        text,
+        messageId: msg?.id,
+      },
+    });
+  });
+
+  pi.on("message_end", async (event: any) => {
+    const msg = event.message;
+    const role = msg?.role || "unknown";
+
+    // Extract full text content from final message
+    let fullText = "";
+    if (msg?.content) {
+      if (typeof msg.content === "string") {
+        fullText = msg.content;
+      } else if (Array.isArray(msg.content)) {
+        fullText = msg.content
+          .filter((b: any) => b?.type === "text")
+          .map((b: any) => b.text || "")
+          .join("");
+      }
+    }
+
+    emit({
+      ts: Date.now(),
+      type: "message",
+      data: {
+        event: "end",
+        role,
+        fullText,
+        messageId: msg?.id,
+      },
+    });
+  });
+
+  // ── Model changes ────────────────────────────────────────────
+  pi.on("model_select", async (event: any) => {
+    emit({
+      ts: Date.now(),
+      type: "model",
+      data: {
+        model: event.model?.id || event.model?.name || "unknown",
+        previous: event.previousModel?.id || "none",
+        source: event.source,
+      },
+    });
+  });
+
+  // ── Session shutdown flush ───────────────────────────────────
+  pi.on("session_shutdown", async () => {
+    emit({
+      ts: Date.now(),
+      type: "agent",
+      data: { event: "shutdown" },
+    });
   });
 }

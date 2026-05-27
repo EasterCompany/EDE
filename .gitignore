@@ -12,3 +12,4 @@ nvim/.neoconf.json
 pi/sessions/
 pi/auth.json
 context-tui/target/
+monitor-tui/target/

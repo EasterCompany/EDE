@@ -382,6 +382,18 @@ else
   draw_centered "${ORANGE}⚠️ cargo not found — skipping context TUI build.${RESET}"
 fi
 
+# Darwin Monitor TUI
+draw_centered "${CYAN}🔧 Building Darwin Agent Monitor...${RESET}"
+if command -v cargo &>/dev/null; then
+  (cd "$EDE_DIR/monitor-tui" && cargo build --release) >/dev/null 2>&1 && \
+    cp "$EDE_DIR/monitor-tui/target/release/darwin-monitor" /usr/local/bin/darwin-monitor 2>/dev/null && \
+    chmod +x /usr/local/bin/darwin-monitor 2>/dev/null && \
+    draw_centered "${GREEN}✅ Darwin Agent Monitor installed.${RESET}" || \
+    draw_centered "${ORANGE}⚠️ Monitor TUI build skipped (check cargo).${RESET}"
+else
+  draw_centered "${ORANGE}⚠️ cargo not found — skipping monitor TUI build.${RESET}"
+fi
+
 sed -i "s|/root/|$HOME/|g" "$PI_AGENT_DIR/settings.json"
 sleep 0.2
 
