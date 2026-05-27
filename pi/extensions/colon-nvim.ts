@@ -1,11 +1,10 @@
 /**
- * Darwin IDE — Neovim command integration from pi agent interface.
+ * Darwin IDE — Neovim command + Pi slash command integration
  *
- * Two features:
+ * Three features:
  * 1. Colon passthrough — user types `:wqa` in pi chat → forwarded to Neovim via RPC
  * 2. nvim_command tool — Darwin can call it to control the editor
- *
- * Uses nvim_exec_lua via --remote-expr for reliable execution (no keystroke simulation).
+ * 3. slash_command tool — Darwin can execute pi commands (/reload, /compact, etc.)
  */
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { execSync } from "child_process";
@@ -13,38 +12,18 @@ import { writeFileSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-function execNvimCmd(cmd: string): { ok: boolean; error?: string } {
+function execNvimLua(luaCode: string): { ok: boolean; result?: string; error?: string } {
   const server = process.env.NVIM;
-  if (!server) {
-    return { ok: false, error: "No Neovim server socket ($NVIM)" };
-  }
+  if (!server) return { ok: false, error: "No Neovim server ($NVIM)" };
 
-  // Write command to temp file to avoid all shell/Vim quoting issues
-  const tmpFile = join(tmpdir(), `nvim-cmd-${Date.now()}.lua`);
+  const tmpFile = join(tmpdir(), `nvim-lua-${Date.now()}.lua`);
   try {
-    // Escape for Lua string
-    const luaEscaped = cmd
-      .replace(/\\/g, "\\\\")
-      .replace(/"/g, '\\"')
-      .replace(/\n/g, "\\n");
-    // Build Lua: switch to a non-terminal window first, then execute
-    const luaCode = [
-      'for _, win in ipairs(vim.api.nvim_list_wins()) do',
-      '  local buf = vim.api.nvim_win_get_buf(win)',
-      "  if vim.bo[buf].buftype ~= 'terminal' then",
-      '    vim.api.nvim_set_current_win(win)',
-      '    break',
-      '  end',
-      'end',
-      `vim.cmd("${luaEscaped}")`,
-    ].join('\n');
     writeFileSync(tmpFile, luaCode);
-
-    execSync(
+    const output = execSync(
       `nvim --server '${server}' --remote-expr "execute('luafile ${tmpFile}')" 2>/dev/null`,
-      { timeout: 3000 },
-    );
-    return { ok: true };
+      { timeout: 3000, encoding: "utf-8" },
+    ).trim();
+    return { ok: true, result: output };
   } catch (err: any) {
     return { ok: false, error: err?.message || String(err) };
   } finally {
@@ -56,30 +35,25 @@ export default function (pi: ExtensionAPI) {
   // ── :command passthrough (user types colon commands in pi chat) ──
   pi.on("input", async (event, ctx) => {
     const raw = event.text.trim();
+    if (!raw.startsWith(":") || raw === ":") return;
 
-    // Only intercept colon-prefixed commands
-    if (!raw.startsWith(":") || raw === ":") {
-      return;
-    }
-
-    // Extract the command (everything after ":")
     const nvimCmd = raw.slice(1).trim();
-    if (!nvimCmd) {
+    if (!nvimCmd) return { action: "continue" };
+
+    try {
+      execSync(
+        `nvim --server '${process.env.NVIM}' --remote-expr "execute('luafile /dev/stdin')" 2>/dev/null`,
+        { timeout: 3000, input: `vim.cmd("${nvimCmd.replace(/"/g, '\\"')}")` },
+      );
+      ctx.ui.notify(`Neovim: :${nvimCmd}`, "info");
+    } catch {
+      ctx.ui.notify("Failed to execute Neovim command", "error");
       return { action: "continue" };
     }
-
-    const result = execNvimCmd(nvimCmd);
-    if (result.ok) {
-      ctx.ui.notify(`Neovim: :${nvimCmd}`, "info");
-    } else {
-      ctx.ui.notify(`Failed: ${result.error}`, "error");
-      return { action: "continue" }; // fall through to LLM on failure
-    }
-
     return { action: "handled" };
   });
 
-  // ── nvim_command tool (Darwin can call this to control Neovim) ──
+  // ── nvim_command tool ────────────────────────────────────────
   pi.registerTool({
     name: "nvim_command",
     label: "Neovim Command",
@@ -93,26 +67,69 @@ export default function (pi: ExtensionAPI) {
     parameters: {
       type: "object",
       properties: {
-        command: {
-          type: "string",
-          description:
-            "The Neovim colon command (without the leading colon), e.g. 'vsp /path/to/file.ts' or 'w' or 'bd'",
-        },
+        command: { type: "string", description: "Neovim colon command without the colon, e.g. 'vsp file.ts' or 'w'" },
       },
       required: ["command"],
     },
-    execute: async (_toolCallId: string, params: { command: string }) => {
-      const result = execNvimCmd(params.command);
-      if (result.ok) {
-        return {
-          content: [{ type: "text", text: `Executed Neovim command: :${params.command}` }],
-          isError: false,
-        };
+    execute: async (_id: string, params: { command: string }) => {
+      const luaCode = [
+        'for _, win in ipairs(vim.api.nvim_list_wins()) do',
+        '  local buf = vim.api.nvim_win_get_buf(win)',
+        "  if vim.bo[buf].buftype ~= 'terminal' then",
+        '    vim.api.nvim_set_current_win(win)',
+        '    break',
+        '  end',
+        'end',
+        `vim.cmd("${params.command.replace(/"/g, '\\"')}")`,
+        'return "ok"',
+      ].join('\n');
+
+      const r = execNvimLua(luaCode);
+      if (r.ok) {
+        return { content: [{ type: "text", text: `Executed Neovim command: :${params.command}` }], isError: false };
       }
-      return {
-        content: [{ type: "text", text: `Neovim command failed: ${result.error}` }],
-        isError: true,
-      };
+      return { content: [{ type: "text", text: `Failed: ${r.error}` }], isError: true };
+    },
+  });
+
+  // ── slash_command tool (Darwin can self-execute pi commands) ──
+  pi.registerTool({
+    name: "slash_command",
+    label: "Pi Slash Command",
+    description:
+      "Execute a pi slash command in the Darwin IDE chat (e.g. /reload, /compact, /model, /session). " +
+      "Use this to reload extensions, switch models, compact context, or run any pi built-in command " +
+      "without asking the user to type it manually.",
+    promptSnippet: "/{command} — execute a pi slash command",
+    parameters: {
+      type: "object",
+      properties: {
+        command: { type: "string", description: "Pi slash command without the leading slash, e.g. 'reload' or 'compact'" },
+      },
+      required: ["command"],
+    },
+    execute: async (_id: string, params: { command: string }) => {
+      const luaCode = [
+        'local target_chan = nil',
+        'for _, win in ipairs(vim.api.nvim_list_wins()) do',
+        '  local buf = vim.api.nvim_win_get_buf(win)',
+        "  if vim.bo[buf].buftype == 'terminal' then",
+        '    target_chan = vim.bo[buf].channel',
+        '    break',
+        '  end',
+        'end',
+        'if target_chan then',
+        `  vim.api.nvim_chan_send(target_chan, '/${params.command}\\r')`,
+        '  return "ok"',
+        'end',
+        'return "no terminal"',
+      ].join('\n');
+
+      const r = execNvimLua(luaCode);
+      if (r.ok) {
+        return { content: [{ type: "text", text: `Executed pi command: /${params.command}` }], isError: false };
+      }
+      return { content: [{ type: "text", text: `Failed: ${r.error || r.result}` }], isError: true };
     },
   });
 }
