@@ -116,6 +116,27 @@ All internal domains are HTTPS-only. HTTP and WebSocket connections are automati
 
 ---
 
+## Advanced Tooling
+
+A suite of power-user CLI tools is available on **ec-server** to assist with debugging, data parsing, and Rust analysis.
+
+### Data & Network
+- **`jq` / `yq`**: Parse and manipulate JSON, YAML, TOML, and XML. Essential for inspecting API responses and `Cargo.toml`.
+- **`http` (HTTPie)**: A user-friendly `curl` alternative for testing APIs with automatic JSON formatting.
+- **`lsof`**: List open files and network ports. Use to find port conflicts (e.g., `lsof -i :8080`).
+
+### System Debugging
+- **`strace`**: Trace system calls and signals. Critical for diagnosing services that crash or hang during startup.
+- **`fd`**: A fast and intuitive alternative to `find`.
+- **`tree`**: Visualize directory structures.
+
+### Rust Analysis (via Cargo)
+- **`cargo-expand`**: Expands macros (like Leptos' `view!`) to show the underlying Rust code. Useful for debugging complex hydration issues.
+- **`cargo-audit`**: Audit `Cargo.lock` for dependencies with security vulnerabilities.
+- **`cargo-tree`**: Display a tree visualization of dependencies.
+
+---
+
 ## Systemd Service Management
 
 All backend services are managed by `systemd`. Standard defaults cause silent failures.
