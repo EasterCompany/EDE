@@ -253,16 +253,6 @@ function install_dependency() {
     return
   fi
 
-  if [ "$cmd" = "gemini" ]; then
-    if command -v npm &>/dev/null; then
-      $SUDO_CMD npm install -g gemini-cli
-    else
-      draw_centered "${RED}❌ Error: 'gemini' is missing and 'npm' is not found. Please install manually.${RESET}"
-      exit 1
-    fi
-    return
-  fi
-
   local PM=""
   if command -v apt-get &>/dev/null; then
     PM="apt-get"
@@ -337,7 +327,7 @@ function install_dependency() {
 }
 
 # Prerequisites
-PREREQS=("nvim" "pi" "git" "curl" "lazygit" "rg" "ffplay" "xclip" "wl-copy" "jq" "yq" "strace" "lsof" "http" "fd" "tree" "gemini")
+PREREQS=("nvim" "pi" "git" "curl" "lazygit" "rg" "ffplay" "xclip" "wl-copy" "jq" "yq" "strace" "lsof" "http" "fd" "tree")
 for cmd in "${PREREQS[@]}"; do
   if ! command -v "$cmd" &>/dev/null; then
     install_dependency "$cmd"
@@ -383,7 +373,7 @@ mkdir -p "$PI_AGENT_DIR/extensions"
 draw_centered "${CYAN}🛠️ Configuring Pi Agent for Darwin...${RESET}"
 
 cp "$EDE_DIR/pi/settings.json" "$PI_AGENT_DIR/settings.json"
-ACTIVE_EXTENSIONS=("context-tiered.ts" "dependency-rag.ts" "auto-validation.ts" "auto-format.ts" "self-correction.ts" "visual-bridge.ts" "memory-vault.ts" "darwin-branding.ts" "monitor.ts" "colon-nvim.ts" "provider-easter.ts" "provider-gemini-agent.ts" "etl.ts" "footer-quota.ts" "web-search.ts")
+ACTIVE_EXTENSIONS=("context-tiered.ts" "dependency-rag.ts" "auto-validation.ts" "auto-format.ts" "self-correction.ts" "visual-bridge.ts" "memory-vault.ts" "darwin-branding.ts" "monitor.ts" "colon-nvim.ts" "provider-easter.ts" "etl.ts" "footer-quota.ts" "web-search.ts")
 for ext in "${ACTIVE_EXTENSIONS[@]}"; do
   cp "$EDE_DIR/pi/extensions/$ext" "$PI_AGENT_DIR/extensions/$ext"
 done
@@ -449,13 +439,6 @@ if [ -n "$SHELL_CONFIG" ]; then
 fi
 sleep 0.2
 
-# Gemini CLI Configuration Setup
-draw_centered "${CYAN}Syncing gemini-cli configuration...${RESET}"
-if [ -d "$EDE_DIR/gemini-config-template" ]; then
-  mkdir -p "$HOME/.gemini"
-  cp -rp "$EDE_DIR/gemini-config-template/." "$HOME/.gemini/" 2>/dev/null || true
-fi
-sleep 0.2
 
 if [ "$REMOTE_INSTALL" = true ]; then
   draw_centered "${BLUE}🗑️ Removing source repository ($EDE_DIR)...${RESET}"

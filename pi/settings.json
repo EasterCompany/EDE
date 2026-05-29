@@ -26,7 +26,6 @@
     "/root/.pi/agent/extensions/darwin-branding.ts",
     "/root/.pi/agent/extensions/colon-nvim.ts",
     "/root/.pi/agent/extensions/provider-easter.ts",
-    "/root/.pi/agent/extensions/provider-gemini-agent.ts",
     "/root/.pi/agent/extensions/etl.ts",
     "/root/.pi/agent/extensions/footer-quota.ts",
     "/root/.pi/agent/extensions/web-search.ts"

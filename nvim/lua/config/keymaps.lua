@@ -6,7 +6,6 @@ local function close_all_sidebars()
   -- Terminal-based sidebars
   local sidebars = {
     vim.fn.stdpath("config") .. "/scripts/darwin-cli.sh",
-    vim.fn.stdpath("config") .. "/scripts/gemini-agent.sh",
     nil, -- Standard Terminal
   }
 
@@ -69,11 +68,6 @@ end, { noremap = true, silent = true, desc = "Explorer" })
 vim.keymap.set({ "n", "t" }, "<leader>pd", function()
   toggle_sidebar(vim.fn.stdpath("config") .. "/scripts/darwin-cli.sh", true)
 end, { noremap = true, silent = true, desc = "Darwin CLI" })
-
--- Global keymap for Gemini CLI
-vim.keymap.set({ "n", "t" }, "<leader>pg", function()
-  toggle_sidebar(vim.fn.stdpath("config") .. "/scripts/gemini-agent.sh", true)
-end, { noremap = true, silent = true, desc = "Gemini CLI" })
 
 -- Global keymap for Standard Terminal
 vim.keymap.set({ "n", "t" }, "<C-/>", function()

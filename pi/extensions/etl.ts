@@ -592,7 +592,7 @@ export default function (pi: ExtensionAPI) {
   //
   // Routes tasks to the correct agent:
   //   darwin  → inject into active chat (pi.sendUserMessage)
-  //   gemini/dexter/diana → EMS API
+  //   dexter → EMS API
   //   opengo/deepseek     → OpenCode API
 
   // ───────────────────────────────────────────────────────────
@@ -601,7 +601,7 @@ export default function (pi: ExtensionAPI) {
   // Finds the next ready task from the ETL board and dispatches
   // it to the appropriate agent:
   //   - opengo → handled directly in THIS chat via sendUserMessage
-  //   - darwin/gemini/dexter/diana → called via EMS API, results HERE
+  //   - darwin/dexter → called via EMS API, results HERE
   //
   // All output appears in one continuous chat so the user sees
   // every agent's progress live. Auto-cycle processes all ready

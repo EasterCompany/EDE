@@ -79,8 +79,7 @@ All internal domains are HTTPS-only. HTTP and WebSocket connections are automati
 - **Host:** ec-server (local). **Port:** 100.100.1.1:8080.
 - **Access:** `https://easter.company/ems` (through ECG). **Internal:** `https://ems.char-istrian.ts.net`.
 - **Stack:** Rust + Axum + Tokio. Fetches JWT secrets from EID at startup. Uses redirect-based SSO login.
-- **Role:** AI model orchestration — routes Darwin Easter for Darwin IDE, Gemma 4.x for Dexter.
-- **Models:** Darwin Easter features high reasoning and multimodal support.
+- **Role:** AI model orchestration — routes Darwin for Darwin IDE, Gemma 4.x for Dexter.
 - **Deploy:** `./build_deploy.sh` / `./build_install.sh` + `ems.service` (systemd).
 
 ### EMP — Easter Media Player
@@ -98,7 +97,7 @@ All internal domains are HTTPS-only. HTTP and WebSocket connections are automati
 - **Host:** ec-server (local). Launched via `darwin` alias → `nvim`.
 - Built on pi coding agent (`@earendil-works/pi-coding-agent`) + Neovim + LazyVim.
 - Extensions at `~/.pi/agent/extensions/` provide Darwin branding, memory store, ETL integration, context debugging, and provider routing.
-- Two backends available: `<C-\>` Easter Company (Darwin Agent), `<C-|>` Gemini Agent.
+- Single backend: `<C-\>` Easter Company (Darwin Agent).
 
 ---
 
@@ -257,6 +256,5 @@ Before ending a turn, ensure every repo with uncommitted or unpushed changes is 
 
 ---
 
-*Consolidated from GEMINI.md, AGENT_GUIDELINES.md, CORE_FUNDAMENTALS.md, legacy .gemini context, and /AGENTS.md.*
-*Verified against live system state on ec-server — 2026-05-26.*
-ate on ec-server — 2026-05-26.*
+*Consolidated from AGENT_GUIDELINES.md, CORE_FUNDAMENTALS.md, and /AGENTS.md.*
+*Verified against live system state on ec-server — 2026-05-27.*
