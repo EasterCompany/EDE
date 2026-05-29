@@ -17,7 +17,7 @@ export default function (pi: ExtensionAPI) {
   pi.registerTool({
     name: "search_memory",
     description: "Searches the Darwin long-term memory vault for past summaries, decisions, and progress reports.",
-    inputSchema: Type.Object({
+    parameters: Type.Object({
       query: Type.String({ description: "Keywords to search for in past memories." }),
     }),
     execute: async (args) => {

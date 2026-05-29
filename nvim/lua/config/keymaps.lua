@@ -66,14 +66,14 @@ vim.keymap.set({ "n", "t" }, "<C-e>", function()
 end, { noremap = true, silent = true, desc = "Explorer" })
 
 -- Global keymap for Pi CLI terminal
-vim.keymap.set({ "n", "t" }, "<C-\\>", function()
+vim.keymap.set({ "n", "t" }, "<leader>pd", function()
   toggle_sidebar(vim.fn.stdpath("config") .. "/scripts/darwin-cli.sh", true)
-end, { noremap = true, silent = true, desc = "Pi CLI" })
+end, { noremap = true, silent = true, desc = "Darwin CLI" })
 
 -- Global keymap for Gemini CLI
-vim.keymap.set({ "n", "t" }, "<C-'>", function()
+vim.keymap.set({ "n", "t" }, "<leader>pg", function()
   toggle_sidebar(vim.fn.stdpath("config") .. "/scripts/gemini-agent.sh", true)
-end, { noremap = true, silent = true, desc = "Gemini Agent" })
+end, { noremap = true, silent = true, desc = "Gemini CLI" })
 
 -- Global keymap for Standard Terminal
 vim.keymap.set({ "n", "t" }, "<C-/>", function()
@@ -92,7 +92,9 @@ end, { noremap = true, silent = true, desc = "Lazygit" })
 -- Global keymap for ETL Todo TUI
 vim.keymap.set({ "n", "t" }, "<leader>pt", function()
   local ok, etl = pcall(require, "config.etl")
-  if ok and etl.toggle then etl.toggle() end
+  if ok and etl.toggle then
+    etl.toggle()
+  end
 end, { noremap = true, silent = true, desc = "Tasks (ETL)" })
 
 -- Global keymap for Darwin Agent Monitor (Rust TUI)
@@ -114,7 +116,9 @@ vim.keymap.set("n", "<leader>ps", function()
       break
     end
   end
-  if not main_win then main_win = vim.api.nvim_get_current_win() end
+  if not main_win then
+    main_win = vim.api.nvim_get_current_win()
+  end
 
   local buf = vim.api.nvim_create_buf(false, true)
   pcall(vim.api.nvim_buf_set_name, buf, "darwin-monitor://inspector")
@@ -146,7 +150,9 @@ vim.keymap.set("n", "<leader>pc", function()
   if not f then
     local seed = io.open(ctx_file, "w")
     if seed then
-      seed:write("# \u{1F9E0} Darwin Context Window\n\n*No context captured yet — send a prompt to populate this view.*\n")
+      seed:write(
+        "# \u{1F9E0} Darwin Context Window\n\n*No context captured yet — send a prompt to populate this view.*\n"
+      )
       seed:close()
     end
   else
@@ -162,7 +168,9 @@ vim.keymap.set("n", "<leader>pc", function()
       break
     end
   end
-  if not main_win then main_win = vim.api.nvim_get_current_win() end
+  if not main_win then
+    main_win = vim.api.nvim_get_current_win()
+  end
 
   -- Wipe any existing context TUI buffer (don't close windows — E444 guard)
   for _, buf in ipairs(vim.api.nvim_list_bufs()) do
@@ -228,12 +236,16 @@ end, { desc = "Darwin: Search & Replace (Right Sidebar)" })
 -- Jump-to-file hotkeys for monitor context
 vim.keymap.set("n", "<leader>fr", function()
   local monitor_ok, monitor = pcall(require, "config.monitor")
-  if monitor_ok then monitor.open_last_file("read") end
+  if monitor_ok then
+    monitor.open_last_file("read")
+  end
 end, { desc = "Darwin: Open Monitor File (Read-Only)" })
 
 vim.keymap.set("n", "<leader>fw", function()
   local monitor_ok, monitor = pcall(require, "config.monitor")
-  if monitor_ok then monitor.open_last_file("edit") end
+  if monitor_ok then
+    monitor.open_last_file("edit")
+  end
 end, { desc = "Darwin: Open Monitor File (Edit)" })
 
 -- Global keymap for Darwin CLI: Focus and Interrupt
@@ -249,6 +261,14 @@ vim.keymap.set({ "n", "t" }, "<leader>qe", function()
   else
     -- If not running, just open it
     close_all_sidebars()
-    Snacks.terminal.toggle(pi_cmd, { win = { position = "left", width = 0.40, bo = { buflisted = false }, wo = { winbar = '', statusline = '', winfixwidth = true } }, interactive = true })
+    Snacks.terminal.toggle(pi_cmd, {
+      win = {
+        position = "left",
+        width = 0.40,
+        bo = { buflisted = false },
+        wo = { winbar = "", statusline = "", winfixwidth = true },
+      },
+      interactive = true,
+    })
   end
 end, { noremap = true, silent = true, desc = "Darwin: Focus & Interrupt" })

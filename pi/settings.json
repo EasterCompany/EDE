@@ -1,6 +1,6 @@
 {
   "defaultProvider": "easter-company",
-  "defaultModel": "darwin-easter",
+  "defaultModel": "darwin",
   "defaultThinkingLevel": "off",
   "showHardwareCursor": true,
   "quietStartup": true,
@@ -8,7 +8,7 @@
   "doubleEscapeAction": "none",
   "treeFilterMode": "default",
   "compactTools": true,
-  "models": "easter-company/darwin-easter",
+  "models": "easter-company/darwin",
   "hideFooter": false,
   "theme": "dark",
   "packages": [

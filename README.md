@@ -47,7 +47,7 @@ git clone git@github.com:EasterCompany/EDE.git && cd EDE && ./install.sh -y -s
 | Shortcut | Action |
 | --- | --- |
 | `[CTRL] + \` | **Toggle Darwin CLI**: Open/Hide the AI Agent sidebar |
-| `[CTRL] + '` | **Toggle Gemini CLI**: Open/Hide the Gemini Pro sidebar |
+| `[CTRL] + \|` | **Toggle Gemini CLI**: Open/Hide the Gemini Pro sidebar |
 | `[SPACE] + QE` | **Focus & Interrupt**: Instantly jump to Darwin and stop the current AI action |
 | `[SPACE] + PS` | **Agent Monitor**: Restore the real-time AI tool-call monitor |
 | `[SPACE] + FR` | **Monitor Jump (Read)**: Jump to the file the agent is currently viewing |

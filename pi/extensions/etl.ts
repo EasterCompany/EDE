@@ -524,7 +524,7 @@ export default function (pi: ExtensionAPI) {
   const EMS_REMOTE = "https://easter.company/api/ems/v1";
 
   const AGENT_MODELS: Record<string, string> = {
-    darwin: "darwin-easter",
+    darwin: "darwin",
   };
 
   function detectMyIdentity(modelId?: string): string {

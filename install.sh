@@ -451,8 +451,10 @@ sleep 0.2
 
 # Gemini CLI Configuration Setup
 draw_centered "${CYAN}Syncing gemini-cli configuration...${RESET}"
-mkdir -p "$HOME/.gemini"
-cp -r "$EDE_DIR/gemini-config-template/." "$HOME/.gemini/"
+if [ -d "$EDE_DIR/gemini-config-template" ]; then
+  mkdir -p "$HOME/.gemini"
+  cp -rp "$EDE_DIR/gemini-config-template/." "$HOME/.gemini/" 2>/dev/null || true
+fi
 sleep 0.2
 
 if [ "$REMOTE_INSTALL" = true ]; then
@@ -484,12 +486,6 @@ if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
 fi
 cd "$HOME"
 exec nvim
-al/bin is on PATH before launching
-if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
-  export PATH="$HOME/.local/bin:$PATH"
-fi
-cd "$HOME"
-exec nvim
 ocal/bin:"* ]]; then
   export PATH="$HOME/.local/bin:$PATH"
 fi
@@ -499,15 +495,6 @@ ec nvim
 al/bin is on PATH before launching
 if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
   export PATH="$HOME/.local/bin:$PATH"
-fi
-cd "$HOME"
-exec nvim
-ocal/bin:"* ]]; then
-  export PATH="$HOME/.local/bin:$PATH"
-fi
-cd "$HOME"
-exec nvim
-bin:$PATH"
 fi
 cd "$HOME"
 exec nvim

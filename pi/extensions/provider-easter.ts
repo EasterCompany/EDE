@@ -8,7 +8,7 @@ export default function (pi: ExtensionAPI) {
     api: "openai-completions",
     models: [
       {
-        id: "darwin-easter",
+        id: "darwin",
         name: "Darwin Easter",
         reasoning: true,
         input: ["text"],

@@ -98,7 +98,7 @@ All internal domains are HTTPS-only. HTTP and WebSocket connections are automati
 - **Host:** ec-server (local). Launched via `darwin` alias → `nvim`.
 - Built on pi coding agent (`@earendil-works/pi-coding-agent`) + Neovim + LazyVim.
 - Extensions at `~/.pi/agent/extensions/` provide Darwin branding, memory store, ETL integration, context debugging, and provider routing.
-- Three backends available: `<C-\>` Easter Company, `<C-;>` OpenGo, `<C-'>` Gemini.
+- Two backends available: `<C-\>` Easter Company (Darwin Agent), `<C-|>` Gemini Agent.
 
 ---
 
