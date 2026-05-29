@@ -220,6 +220,8 @@ function install_dependency() {
   if [ "$cmd" = "ffplay" ]; then pkg="ffmpeg"; fi
   if [ "$cmd" = "rg" ]; then pkg="ripgrep"; fi
   if [ "$cmd" = "wl-copy" ]; then pkg="wl-clipboard"; fi
+  if [ "$cmd" = "http" ]; then pkg="httpie"; fi
+  if [ "$cmd" = "fd" ]; then pkg="fd"; fi
 
   local SUDO_CMD=""
   if command -v sudo &>/dev/null && [ "$EUID" -ne 0 ]; then
@@ -311,7 +313,7 @@ function install_dependency() {
 }
 
 # Prerequisites
-PREREQS=("nvim" "pi" "git" "curl" "lazygit" "rg" "ffplay" "xclip" "wl-copy")
+PREREQS=("nvim" "pi" "git" "curl" "lazygit" "rg" "ffplay" "xclip" "wl-copy" "jq" "yq" "strace" "lsof" "http" "fd" "tree")
 for cmd in "${PREREQS[@]}"; do
   if ! command -v "$cmd" &>/dev/null; then
     install_dependency "$cmd"
@@ -413,6 +415,14 @@ if command -v cargo &>/dev/null; then
     draw_centered "${ORANGE}⚠️ Monitor TUI build/install failed.${RESET}"
 else
   draw_centered "${ORANGE}⚠️ cargo not found — skipping monitor TUI build.${RESET}"
+fi
+
+# Darwin Rust Power-Tools
+if command -v cargo &>/dev/null; then
+  draw_centered "${CYAN}🔧 Installing Darwin Rust Power-Tools...${RESET}"
+  cargo install cargo-expand cargo-audit --locked --silent && \
+    draw_centered "${GREEN}✅ Darwin Rust Power-Tools installed.${RESET}" || \
+    draw_centered "${ORANGE}⚠️ Failed to install cargo power-tools.${RESET}"
 fi
 
 sed -i "s|/root/|$HOME/|g" "$PI_AGENT_DIR/settings.json"
