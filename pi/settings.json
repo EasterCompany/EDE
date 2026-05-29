@@ -1,6 +1,6 @@
 {
   "defaultProvider": "easter-company",
-  "defaultModel": "darwin-opengo-auto",
+  "defaultModel": "darwin-easter",
   "defaultThinkingLevel": "off",
   "showHardwareCursor": true,
   "quietStartup": true,
@@ -8,7 +8,7 @@
   "doubleEscapeAction": "none",
   "treeFilterMode": "default",
   "compactTools": true,
-  "models": "easter-company/*",
+  "models": "easter-company/darwin-easter",
   "hideFooter": false,
   "theme": "dark",
   "packages": [
@@ -16,10 +16,17 @@
   ],
   "extensions": [
     "/root/.pi/agent/extensions/monitor.ts",
+    "/root/.pi/agent/extensions/context-tiered.ts",
+    "/root/.pi/agent/extensions/dependency-rag.ts",
+    "/root/.pi/agent/extensions/auto-validation.ts",
+    "/root/.pi/agent/extensions/auto-format.ts",
+    "/root/.pi/agent/extensions/self-correction.ts",
+    "/root/.pi/agent/extensions/visual-bridge.ts",
+    "/root/.pi/agent/extensions/memory-vault.ts",
     "/root/.pi/agent/extensions/darwin-branding.ts",
     "/root/.pi/agent/extensions/colon-nvim.ts",
     "/root/.pi/agent/extensions/provider-easter.ts",
-    "/root/.pi/agent/extensions/provider-gemini.ts",
+    "/root/.pi/agent/extensions/provider-gemini-agent.ts",
     "/root/.pi/agent/extensions/etl.ts",
     "/root/.pi/agent/extensions/footer-quota.ts",
     "/root/.pi/agent/extensions/web-search.ts"

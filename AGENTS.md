@@ -79,8 +79,8 @@ All internal domains are HTTPS-only. HTTP and WebSocket connections are automati
 - **Host:** ec-server (local). **Port:** 100.100.1.1:8080.
 - **Access:** `https://easter.company/ems` (through ECG). **Internal:** `https://ems.char-istrian.ts.net`.
 - **Stack:** Rust + Axum + Tokio. Fetches JWT secrets from EID at startup. Uses redirect-based SSO login.
-- **Role:** AI model orchestration — routes Darwin Cloud for Darwin IDE, Gemma 4.x for Dexter.
-- **Models:** Gemma 4.x features multimodal support and 'thinking mode' with `<|channel|>thought` delimiters.
+- **Role:** AI model orchestration — routes Darwin Easter for Darwin IDE, Gemma 4.x for Dexter.
+- **Models:** Darwin Easter features high reasoning and multimodal support.
 - **Deploy:** `./build_deploy.sh` / `./build_install.sh` + `ems.service` (systemd).
 
 ### EMP — Easter Media Player
@@ -259,3 +259,4 @@ Before ending a turn, ensure every repo with uncommitted or unpushed changes is 
 
 *Consolidated from GEMINI.md, AGENT_GUIDELINES.md, CORE_FUNDAMENTALS.md, legacy .gemini context, and /AGENTS.md.*
 *Verified against live system state on ec-server — 2026-05-26.*
+ate on ec-server — 2026-05-26.*

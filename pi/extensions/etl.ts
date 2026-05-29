@@ -524,21 +524,14 @@ export default function (pi: ExtensionAPI) {
   const EMS_REMOTE = "https://easter.company/api/ems/v1";
 
   const AGENT_MODELS: Record<string, string> = {
-    opengo: "deepseek-v4-flash-free",   // handled directly
-    darwin: "darwin-cloud-auto",
-    gemini: "gemini-cloud-auto",
-    dexter: "gemma-4-e2b",
-    diana: "gemini-3.1-flash-lite-preview",
+    darwin: "darwin-easter",
   };
 
   function detectMyIdentity(modelId?: string): string {
-    if (!modelId) return process.env.DARWIN_USER || "opengo";
+    if (!modelId) return "darwin";
     const id = modelId.toLowerCase();
-    if (id.includes("deepseek") || id.includes("minimax")) return "opengo";
     if (id.includes("darwin")) return "darwin";
-    if (id.includes("gemini")) return "gemini";
-    if (id.includes("gemma")) return "dexter";
-    return process.env.DARWIN_USER || "opengo";
+    return "darwin";
   }
 
   // ── EMS API helper ───────────────────────────────────────

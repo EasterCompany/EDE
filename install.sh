@@ -124,23 +124,37 @@ fi
 
 function draw_centered() {
   local input="$1"
-  # If no argument, read from stdin
   if [ -z "$input" ]; then
     input=$(cat)
   fi
-  local term_width=$(tput cols 2>/dev/null || echo 80)
+
+  # Robust terminal width detection
+  local term_width
+  if [ -n "$COLUMNS" ]; then
+    term_width=$COLUMNS
+  elif command -v tput >/dev/null 2>&1; then
+    term_width=$(tput cols)
+  elif command -v stty >/dev/null 2>&1; then
+    term_width=$(stty size | awk '{print $2}')
+  else
+    term_width=80
+  fi
 
   echo -e "$input" | while IFS= read -r line; do
-    # Trim leading/trailing whitespace for clean centering
+    # Trim leading/trailing whitespace
     local trimmed=$(echo -e "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-    # Strip ANSI to calculate actual visible length
-    local plain=$(echo -e "$trimmed" | sed "s/\x1B\[\([0-9]\{1,3\}\(;[0-9]\{1,3\}\)*\)\?[mGK]//g")
+    # Robust ANSI stripping for length calculation
+    local plain=$(echo -e "$trimmed" | sed -E "s/\x1B\[([0-9]{1,3}(;[0-9]{1,3})*)?[mGKHF]//g")
     local length=${#plain}
-    [ $length -eq 0 ] && echo "" && continue
+    
+    if [ $length -eq 0 ]; then
+      echo ""
+      continue
+    fi
+    
     local padding=$(((term_width - length) / 2))
     [ $padding -lt 0 ] && padding=0
-    printf "%${padding}s" ""
-    echo -e "$trimmed"
+    printf "%${padding}s%s\n" "" "$trimmed"
   done
 }
 
@@ -239,6 +253,16 @@ function install_dependency() {
     return
   fi
 
+  if [ "$cmd" = "gemini" ]; then
+    if command -v npm &>/dev/null; then
+      $SUDO_CMD npm install -g gemini-cli
+    else
+      draw_centered "${RED}❌ Error: 'gemini' is missing and 'npm' is not found. Please install manually.${RESET}"
+      exit 1
+    fi
+    return
+  fi
+
   local PM=""
   if command -v apt-get &>/dev/null; then
     PM="apt-get"
@@ -313,22 +337,23 @@ function install_dependency() {
 }
 
 # Prerequisites
-PREREQS=("nvim" "pi" "git" "curl" "lazygit" "rg" "ffplay" "xclip" "wl-copy" "jq" "yq" "strace" "lsof" "http" "fd" "tree")
+PREREQS=("nvim" "pi" "git" "curl" "lazygit" "rg" "ffplay" "xclip" "wl-copy" "jq" "yq" "strace" "lsof" "http" "fd" "tree" "gemini")
 for cmd in "${PREREQS[@]}"; do
   if ! command -v "$cmd" &>/dev/null; then
     install_dependency "$cmd"
   fi
 done
+
 sleep 0.2
 
 # Repository Setup
 EDE_DIR="$HOME/EDE"
 if [ ! -d "$EDE_DIR" ]; then
   draw_centered "${BLUE}📥 Cloning Darwin EDE repository...${RESET}"
-  git clone https://github.com/EasterCompany/EDE.git "$EDE_DIR" 2>&1 | draw_centered
+  git clone --progress https://github.com/EasterCompany/EDE.git "$EDE_DIR" 2>&1 | draw_centered
 else
   draw_centered "${BLUE}📂 Updating Darwin EDE repository...${RESET}"
-  cd "$EDE_DIR" && git pull 2>&1 | draw_centered
+  cd "$EDE_DIR" && git --no-pager pull 2>&1 | draw_centered
 fi
 sleep 0.2
 
@@ -356,19 +381,12 @@ sleep 0.2
 PI_AGENT_DIR="$HOME/.pi/agent"
 mkdir -p "$PI_AGENT_DIR/extensions"
 draw_centered "${CYAN}🛠️ Configuring Pi Agent for Darwin...${RESET}"
+
 cp "$EDE_DIR/pi/settings.json" "$PI_AGENT_DIR/settings.json"
-cp "$EDE_DIR/pi/extensions/darwin-branding.ts" "$PI_AGENT_DIR/extensions/darwin-branding.ts"
-cp "$EDE_DIR/pi/extensions/monitor.ts" "$PI_AGENT_DIR/extensions/monitor.ts"
-cp "$EDE_DIR/pi/extensions/colon-nvim.ts" "$PI_AGENT_DIR/extensions/colon-nvim.ts"
-cp "$EDE_DIR/pi/extensions/provider-easter.ts" "$PI_AGENT_DIR/extensions/provider-easter.ts"
-cp "$EDE_DIR/pi/extensions/provider-gemini.ts" "$PI_AGENT_DIR/extensions/provider-gemini.ts"
-cp "$EDE_DIR/pi/extensions/fetch.ts" "$PI_AGENT_DIR/extensions/fetch.ts"
-cp "$EDE_DIR/pi/extensions/search.ts" "$PI_AGENT_DIR/extensions/search.ts"
-cp "$EDE_DIR/pi/extensions/scaffold.ts" "$PI_AGENT_DIR/extensions/scaffold.ts"
-cp "$EDE_DIR/pi/extensions/memory.ts" "$PI_AGENT_DIR/extensions/memory.ts"
-cp "$EDE_DIR/pi/extensions/context-debug.ts" "$PI_AGENT_DIR/extensions/context-debug.ts"
-cp "$EDE_DIR/pi/extensions/footer-quota.ts" "$PI_AGENT_DIR/extensions/footer-quota.ts"
-cp "$EDE_DIR/pi/extensions/web-search.ts" "$PI_AGENT_DIR/extensions/web-search.ts"
+ACTIVE_EXTENSIONS=("context-tiered.ts" "dependency-rag.ts" "auto-validation.ts" "auto-format.ts" "self-correction.ts" "visual-bridge.ts" "memory-vault.ts" "darwin-branding.ts" "monitor.ts" "colon-nvim.ts" "provider-easter.ts" "provider-gemini-agent.ts" "etl.ts" "footer-quota.ts" "web-search.ts")
+for ext in "${ACTIVE_EXTENSIONS[@]}"; do
+  cp "$EDE_DIR/pi/extensions/$ext" "$PI_AGENT_DIR/extensions/$ext"
+done
 
 # Pi Annotate Integration
 draw_centered "${CYAN}🎨 Integrating Pi Annotate...${RESET}"
@@ -379,48 +397,32 @@ cp -r "$EDE_DIR/pi-annotate" "$PI_AGENT_DIR/packages/pi-annotate"
 
 # Helper: install binary with sudo fallback to ~/.local/bin
 function install_binary() {
-  local src="$1"
-  local name="$2"
-  local dest="/usr/local/bin/$name"
-
+  local src="$1" name="$2" dest="/usr/local/bin/$name"
   if command -v sudo &>/dev/null && [ "$EUID" -ne 0 ]; then
-    if sudo cp "$src" "$dest" 2>/dev/null && sudo chmod +x "$dest" 2>/dev/null; then
-      return 0
-    fi
+    sudo cp "$src" "$dest" && sudo chmod +x "$dest" && return 0
   fi
-  if cp "$src" "$dest" 2>/dev/null && chmod +x "$dest" 2>/dev/null; then
-    return 0
-  fi
+  cp "$src" "$dest" 2>/dev/null && chmod +x "$dest" 2>/dev/null && return 0
   mkdir -p "$HOME/.local/bin"
   cp "$src" "$HOME/.local/bin/$name" && chmod +x "$HOME/.local/bin/$name"
 }
 
-# Darwin Context TUI
-draw_centered "${CYAN}🔧 Building Darwin Context Inspector...${RESET}"
-if command -v cargo &>/dev/null; then
-  (cd "$EDE_DIR/context-tui" && cargo build --release) >/dev/null 2>&1 && \
-    install_binary "$EDE_DIR/context-tui/target/release/darwin-context" darwin-context && \
-    draw_centered "${GREEN}✅ Darwin Context Inspector installed.${RESET}" || \
-    draw_centered "${ORANGE}⚠️ Context TUI build/install failed.${RESET}"
-else
-  draw_centered "${ORANGE}⚠️ cargo not found — skipping context TUI build.${RESET}"
-fi
-
-# Darwin Monitor TUI
-draw_centered "${CYAN}🔧 Building Darwin Agent Monitor...${RESET}"
-if command -v cargo &>/dev/null; then
-  (cd "$EDE_DIR/monitor-tui" && cargo build --release) >/dev/null 2>&1 && \
-    install_binary "$EDE_DIR/monitor-tui/target/release/darwin-monitor" darwin-monitor && \
-    draw_centered "${GREEN}✅ Darwin Agent Monitor installed.${RESET}" || \
-    draw_centered "${ORANGE}⚠️ Monitor TUI build/install failed.${RESET}"
-else
-  draw_centered "${ORANGE}⚠️ cargo not found — skipping monitor TUI build.${RESET}"
-fi
+# TUI Builds
+for tui in "context" "monitor"; do
+  draw_centered "${CYAN}🔧 Building Darwin ${tui^} Inspector...${RESET}"
+  if command -v cargo &>/dev/null; then
+    (cd "$EDE_DIR/$tui-tui" && cargo build --release) >/dev/null 2>&1 && \
+      install_binary "$EDE_DIR/$tui-tui/target/release/darwin-$tui" "darwin-$tui" && \
+      draw_centered "${GREEN}✅ Darwin ${tui^} Inspector installed.${RESET}" || \
+      draw_centered "${ORANGE}⚠️ ${tui^} TUI build/install failed.${RESET}"
+  else
+    draw_centered "${ORANGE}⚠️ cargo not found — skipping $tui TUI build.${RESET}"
+  fi
+done
 
 # Darwin Rust Power-Tools
 if command -v cargo &>/dev/null; then
   draw_centered "${CYAN}🔧 Installing Darwin Rust Power-Tools...${RESET}"
-  cargo install cargo-expand cargo-audit --locked --silent && \
+  cargo install cargo-expand cargo-audit --locked --quiet && \
     draw_centered "${GREEN}✅ Darwin Rust Power-Tools installed.${RESET}" || \
     draw_centered "${ORANGE}⚠️ Failed to install cargo power-tools.${RESET}"
 fi
@@ -431,29 +433,26 @@ sleep 0.2
 # Darwin CLI Setup
 draw_centered "${CYAN}🚀 Configuring Darwin CLI Aliases...${RESET}"
 SHELL_CONFIG=""
-if [[ "$SHELL" == *"zsh"* ]]; then
-  SHELL_CONFIG="$HOME/.zshrc"
-elif [[ "$SHELL" == *"bash"* ]]; then
-  SHELL_CONFIG="$HOME/.bashrc"
-fi
-
-DARWIN_AUTH_SCRIPT="$HOME/.config/nvim/scripts/darwin-auth.sh"
-chmod +x "$DARWIN_AUTH_SCRIPT" 2>/dev/null
-DARWIN_ANNOTATE_SCRIPT="$HOME/.config/nvim/scripts/setup-annotate.sh"
-chmod +x "$DARWIN_ANNOTATE_SCRIPT" 2>/dev/null
+[[ "$SHELL" == *"zsh"* ]] && SHELL_CONFIG="$HOME/.zshrc"
+[[ "$SHELL" == *"bash"* ]] && SHELL_CONFIG="$HOME/.bashrc"
 
 if [ -n "$SHELL_CONFIG" ]; then
-  if ! grep -q "alias darwin=" "$SHELL_CONFIG"; then
-    echo "alias darwin='nvim'" >>"$SHELL_CONFIG"
-    echo "alias ide='nvim'" >>"$SHELL_CONFIG"
-  fi
-  if ! grep -q "alias darwin-auth=" "$SHELL_CONFIG"; then
-    echo "alias darwin-auth='$DARWIN_AUTH_SCRIPT'" >>"$SHELL_CONFIG"
-  fi
-  if ! grep -q "alias darwin-annotate=" "$SHELL_CONFIG"; then
-    echo "alias darwin-annotate='$HOME/.config/nvim/scripts/setup-annotate.sh'" >>"$SHELL_CONFIG"
-  fi
+  function add_alias() {
+    local name="$1" cmd="$2"
+    grep -q "alias $name=" "$SHELL_CONFIG" || echo "alias $name='$cmd'" >>"$SHELL_CONFIG"
+  }
+  add_alias "darwin" "nvim"
+  add_alias "ide" "nvim"
+  add_alias "darwin-auth" "$HOME/.config/nvim/scripts/darwin-auth.sh"
+  add_alias "darwin-annotate" "$HOME/.config/nvim/scripts/setup-annotate.sh"
+  chmod +x "$HOME/.config/nvim/scripts/darwin-auth.sh" "$HOME/.config/nvim/scripts/setup-annotate.sh" 2>/dev/null
 fi
+sleep 0.2
+
+# Gemini CLI Configuration Setup
+draw_centered "${CYAN}Syncing gemini-cli configuration...${RESET}"
+mkdir -p "$HOME/.gemini"
+cp -r "$EDE_DIR/gemini-config-template/." "$HOME/.gemini/"
 sleep 0.2
 
 if [ "$REMOTE_INSTALL" = true ]; then
@@ -482,6 +481,33 @@ draw_centered "$SUMMARY"
 # Ensure ~/.local/bin is on PATH before launching
 if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
   export PATH="$HOME/.local/bin:$PATH"
+fi
+cd "$HOME"
+exec nvim
+al/bin is on PATH before launching
+if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+  export PATH="$HOME/.local/bin:$PATH"
+fi
+cd "$HOME"
+exec nvim
+ocal/bin:"* ]]; then
+  export PATH="$HOME/.local/bin:$PATH"
+fi
+cd "$HOME"
+exec nvim
+ec nvim
+al/bin is on PATH before launching
+if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+  export PATH="$HOME/.local/bin:$PATH"
+fi
+cd "$HOME"
+exec nvim
+ocal/bin:"* ]]; then
+  export PATH="$HOME/.local/bin:$PATH"
+fi
+cd "$HOME"
+exec nvim
+bin:$PATH"
 fi
 cd "$HOME"
 exec nvim

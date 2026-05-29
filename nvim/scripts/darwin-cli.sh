@@ -41,12 +41,11 @@ for arg in "$@"; do
 done
 
 if [ "$HAS_MODEL" = false ]; then
-    set -- --model easter-company/darwin-cloud-auto "$@"
+    set -- --model easter-company/darwin-easter "$@"
 fi
 
-# Allow all easter-company models (EMS-backed: darwin-cloud, darwin-local)
-# Also allow opengo models for direct OpenCode access when EMS doesn't have them yet
-set -- --thinking high --models "easter-company/*,opengo/*" "$@"
+# Only allow the single darwin-easter model
+set -- --thinking high --models "easter-company/darwin-easter" "$@"
 
 # ── Session continuation (48-hour window) ──
 CWD_SAFE=$(echo "$PWD" | sed 's/^\///; s/\//-/g; s/$/-/')

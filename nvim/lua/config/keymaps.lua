@@ -3,17 +3,18 @@
 -- Add any additional keymaps here
 
 local function close_all_sidebars()
-  -- Pi
-  local pi_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-cli.sh"
-  local pi_term = Snacks.terminal.get(pi_cmd, { create = false })
-  if pi_term and pi_term:valid() then
-    pi_term:hide()
-  end
+  -- Terminal-based sidebars
+  local sidebars = {
+    vim.fn.stdpath("config") .. "/scripts/darwin-cli.sh",
+    vim.fn.stdpath("config") .. "/scripts/gemini-agent.sh",
+    nil, -- Standard Terminal
+  }
 
-  -- Standard Terminal
-  local main_term = Snacks.terminal.get(nil, { create = false })
-  if main_term and main_term:valid() then
-    main_term:hide()
+  for _, cmd in ipairs(sidebars) do
+    local term = Snacks.terminal.get(cmd, { create = false })
+    if term and term:valid() then
+      term:hide()
+    end
   end
 
   -- Grug-far (Search & Replace)
@@ -21,6 +22,28 @@ local function close_all_sidebars()
     local buf = vim.api.nvim_win_get_buf(win)
     if vim.bo[buf].filetype == "grug-far" then
       vim.api.nvim_win_close(win, true)
+    end
+  end
+end
+
+local function toggle_sidebar(cmd, interactive)
+  local term = Snacks.terminal.get(cmd, { create = false })
+  if term and term:valid() and vim.api.nvim_get_current_buf() == term.buf then
+    term:hide()
+  else
+    close_all_sidebars()
+    if term and term:valid() then
+      term:show():focus()
+    else
+      Snacks.terminal.toggle(cmd, {
+        win = {
+          position = "left",
+          width = 0.40,
+          bo = { buflisted = false },
+          wo = { winbar = "", statusline = "", winfixwidth = true },
+        },
+        interactive = interactive,
+      })
     end
   end
 end
@@ -44,43 +67,22 @@ end, { noremap = true, silent = true, desc = "Explorer" })
 
 -- Global keymap for Pi CLI terminal
 vim.keymap.set({ "n", "t" }, "<C-\\>", function()
-  local pi_cmd = vim.fn.stdpath("config") .. "/scripts/darwin-cli.sh"
-  local term = Snacks.terminal.get(pi_cmd, { create = false })
-
-  if term and term:valid() and vim.api.nvim_get_current_buf() == term.buf then
-    -- Pi terminal is already open and focused, so hide it.
-    term:hide()
-  else
-    -- Pi terminal is not focused or does not exist.
-    -- Ensure all other sidebars (Explorer, Standard Terminal, Grug-far) are closed
-    -- before opening Pi.
-    close_all_sidebars()
-
-    -- Now proceed to open Pi.
-    if term and term:valid() then
-      -- Pi terminal exists but is not focused, show and focus it.
-      term:show():focus()
-    else
-      -- Pi terminal does not exist, create and show it.
-      -- Ensure sidebar options are applied.
-      Snacks.terminal.toggle(pi_cmd, { win = { position = "left", width = 0.40, bo = { buflisted = false }, wo = { winbar = '', statusline = '', winfixwidth = true } }, interactive = true })
-    end
-  end
+  toggle_sidebar(vim.fn.stdpath("config") .. "/scripts/darwin-cli.sh", true)
 end, { noremap = true, silent = true, desc = "Pi CLI" })
 
--- Global keymap for Standard Terminal
-local function toggle_terminal()
-  local term = Snacks.terminal.get(nil, { create = false })
-  if term and term:valid() and vim.api.nvim_get_current_buf() == term.buf then
-    term:hide()
-  else
-    close_all_sidebars()
-    Snacks.terminal.toggle(nil, { win = { position = "left", width = 0.40, bo = { buflisted = false }, wo = { winbar = '', statusline = '', winfixwidth = true } } })
-  end
-end
+-- Global keymap for Gemini CLI
+vim.keymap.set({ "n", "t" }, "<C-'>", function()
+  toggle_sidebar(vim.fn.stdpath("config") .. "/scripts/gemini-agent.sh", true)
+end, { noremap = true, silent = true, desc = "Gemini Agent" })
 
-vim.keymap.set({ "n", "t" }, "<C-/>", toggle_terminal, { noremap = true, silent = true, desc = "Terminal" })
-vim.keymap.set({ "n", "t" }, "<C-_>", toggle_terminal, { noremap = true, silent = true, desc = "which_key_ignore" })
+-- Global keymap for Standard Terminal
+vim.keymap.set({ "n", "t" }, "<C-/>", function()
+  toggle_sidebar(nil, false)
+end, { noremap = true, silent = true, desc = "Terminal" })
+
+vim.keymap.set({ "n", "t" }, "<C-_>", function()
+  toggle_sidebar(nil, false)
+end, { noremap = true, silent = true, desc = "which_key_ignore" })
 
 -- Global keymap for Lazygit
 vim.keymap.set({ "n", "t" }, "<leader>gg", function()
