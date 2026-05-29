@@ -13,3 +13,6 @@ pi/sessions/
 pi/auth.json
 context-tui/target/
 monitor-tui/target/
+
+# Gemini template (contains secrets)
+gemini-config-template/
