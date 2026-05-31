@@ -41,11 +41,11 @@ for arg in "$@"; do
 done
 
 if [ "$HAS_MODEL" = false ]; then
-    set -- --model easter-company/darwin-easter "$@"
+    set -- --model easter-company/darwin "$@"
 fi
 
-# Only allow the single darwin-easter model
-set -- --thinking high --models "easter-company/darwin-easter" "$@"
+# Only allow the single darwin model
+set -- --thinking high --models "easter-company/darwin" "$@"
 
 # ── Session continuation (48-hour window) ──
 CWD_SAFE=$(echo "$PWD" | sed 's/^\///; s/\//-/g; s/$/-/')
