@@ -1,7 +1,7 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { join, extname } from "node:path";
+import { join, extname, dirname } from "node:path";
 
 export default function (pi: ExtensionAPI) {
   let lastChangedFile: string | null = null;
@@ -25,13 +25,14 @@ export default function (pi: ExtensionAPI) {
 
     try {
       // 1. Run Formatter (Fixes what it can)
-      execSync(command, { encoding: "utf8", stdio: "pipe" });
+      // Set cwd to the file's directory so tools like cargo or prettier find their config
+      execSync(command, { encoding: "utf8", stdio: "pipe", cwd: dirname(file) });
       
       // 2. Run Linter Check (Capture remaining issues)
       const lintCmd = detectLintCommand(file);
       if (lintCmd) {
         try {
-          execSync(lintCmd, { encoding: "utf8", stdio: "pipe" });
+          execSync(lintCmd, { encoding: "utf8", stdio: "pipe", cwd: dirname(file) });
           ctx.ui.notify("✅ Formatted & Linted.", "success");
         } catch (lintError: any) {
           const output = lintError.stdout || lintError.stderr || lintError.message;
@@ -43,18 +44,17 @@ export default function (pi: ExtensionAPI) {
       }
     } catch (e: any) {
       // Formatter itself failed
+      const output = e.stdout || e.stderr || e.message || "Unknown error";
       ctx.ui.notify("❌ Auto-format failed.", "error");
+      await pi.sendUserMessage(`SYSTEM: Auto-format failed for \`${file}\`. This usually happens if there's a syntax error or the formatter is not configured correctly:\n\`\`\`\n${output.substring(0, 1000)}\n\`\`\``);
     }
   });
 
   function detectFormatCommand(file: string): string | null {
     const ext = extname(file).toLowerCase();
     
-    // Check for local prettier
-    const hasPrettier = existsSync(join(process.cwd(), "node_modules", ".bin", "prettier"));
-    
-    if (ext === ".ts" || ext === ".js" || ext === ".tsx" || ext === ".jsx" || ext === ".json") {
-      if (hasPrettier) return `npx prettier --write "${file}"`;
+    if ([".ts", ".js", ".tsx", ".jsx", ".json", ".css", ".scss", ".md", ".yaml", ".yml"].includes(ext)) {
+      return `npx prettier --write "${file}"`;
     }
 
     if (ext === ".lua") {
@@ -62,8 +62,11 @@ export default function (pi: ExtensionAPI) {
     }
 
     if (ext === ".rs") {
-      // cargo fmt usually works on the whole crate, but we can try rustfmt
-      if (commandExists("rustfmt")) return `rustfmt "${file}"`;
+      // 'cargo fmt' is preferred, but we fall back to 'rustfmt' if not in a crate
+      if (commandExists("cargo")) {
+        return `cargo fmt -- "${file}" || rustfmt --edition 2021 "${file}"`;
+      }
+      if (commandExists("rustfmt")) return `rustfmt --edition 2021 "${file}"`;
     }
 
     if (ext === ".py") {
