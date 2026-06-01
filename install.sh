@@ -373,7 +373,7 @@ mkdir -p "$PI_AGENT_DIR/extensions"
 draw_centered "${CYAN}🛠️ Configuring Pi Agent for Darwin...${RESET}"
 
 cp "$EDE_DIR/pi/settings.json" "$PI_AGENT_DIR/settings.json"
-ACTIVE_EXTENSIONS=("context-tiered.ts" "dependency-rag.ts" "auto-validation.ts" "auto-format.ts" "self-correction.ts" "visual-bridge.ts" "memory-vault.ts" "darwin-branding.ts" "monitor.ts" "colon-nvim.ts" "provider-easter.ts" "etl.ts" "footer-quota.ts" "web-search.ts")
+ACTIVE_EXTENSIONS=("context-tiered.ts" "dependency-rag.ts" "diagnostics.ts" "auto-format.ts" "self-correction.ts" "visual-bridge.ts" "memory-vault.ts" "darwin-branding.ts" "monitor.ts" "colon-nvim.ts" "provider-easter.ts" "etl.ts" "footer-quota.ts" "web-search.ts")
 for ext in "${ACTIVE_EXTENSIONS[@]}"; do
   cp "$EDE_DIR/pi/extensions/$ext" "$PI_AGENT_DIR/extensions/$ext"
 done
